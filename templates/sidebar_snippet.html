@@ -1,0 +1,79 @@
+<!-- ================================================================
+     ZenithOX -- Chat History Sidebar HTML (drop-in snippet)
+     ================================================================
+     Add this wherever your current memory/history sidebar lives.
+     Link chat_history_redesign.css in <head> and
+          chat_history_redesign.js before </body>.
+     ================================================================ -->
+
+<!-- Sidebar wrapper -->
+<aside class="zh-sidebar" id="zh-sidebar" aria-label="Chat history">
+
+  <!-- Header: title + New Chat button -->
+  <div class="zh-sidebar-header">
+    <span class="zh-sidebar-title">💬 Chats</span>
+
+    <button id="zh-new-chat-btn" type="button" aria-label="Start a new chat">
+      <!-- Plus icon -->
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5"  y1="12" x2="19" y2="12"/>
+      </svg>
+      New Chat
+    </button>
+  </div>
+
+  <!-- Scrollable list -- populated by chat_history_redesign.js -->
+  <div id="zh-chat-list" role="list" aria-label="Saved conversations">
+    <!-- JS renders chat items here -->
+  </div>
+
+</aside>
+
+<!-- Mobile backdrop (closes sidebar on tap outside) -->
+<div class="zh-backdrop" id="zh-backdrop" aria-hidden="true"></div>
+
+
+<!-- ================================================================
+     Mobile toggle button -- put this in your top nav bar
+     ================================================================ -->
+<button id="zh-sidebar-toggle" class="zh-sidebar-toggle-btn"
+        type="button" aria-label="Toggle chat history" aria-expanded="false">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <line x1="3" y1="6"  x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<!-- Mobile toggle script (add near your other inline scripts or
+     at the bottom of the page) -->
+<script>
+  (function () {
+    const sidebar  = document.getElementById("zh-sidebar");
+    const backdrop = document.getElementById("zh-backdrop");
+    const toggle   = document.getElementById("zh-sidebar-toggle");
+
+    if (!sidebar || !toggle) return;
+
+    function openSidebar() {
+      sidebar.classList.add("zh-open");
+      toggle.setAttribute("aria-expanded", "true");
+      backdrop.style.display = "block";
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove("zh-open");
+      toggle.setAttribute("aria-expanded", "false");
+      backdrop.style.display = "none";
+    }
+
+    toggle.addEventListener("click", () =>
+      sidebar.classList.contains("zh-open") ? closeSidebar() : openSidebar()
+    );
+
+    backdrop.addEventListener("click", closeSidebar);
+  })();
+</script>

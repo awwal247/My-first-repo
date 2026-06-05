@@ -1,0 +1,26 @@
+# ZenithOX v4.0 — Core Dependencies
+# ===================================
+
+flask>=3.0
+openai>=1.0
+authlib
+requests
+numpy
+scikit-learn
+python-dotenv
+werkzeug
+
+# PPTX generation
+python-pptx
+
+# Universal file analysis
+pdfplumber
+python-docx
+openpyxl
+Pillow
+
+# PostgreSQL / Supabase
+psycopg2-binary
+
+# HuggingFace Inference API (v4.0 — HF-first, Groq fallback)
+huggingface_hub>=0.24.0

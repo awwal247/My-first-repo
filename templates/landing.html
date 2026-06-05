@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zenith OX — Intelligent AI Research Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Zenith OX — a secure, modular AI research assistant with vector memory, 6 specialist modes, file analysis, and OCR." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:     #050810;
+      --bg1:    #0b0f1a;
+      --bg2:    #111827;
+      --accent: #00f2ff;
+      --acc2:   #7c3aed;
+      --ok:     #00ff88;
+      --text:   #e8edf5;
+      --muted:  rgba(232,237,245,.55);
+      --border: rgba(255,255,255,.09);
+      --glass:  rgba(255,255,255,.04);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID NOISE BG ────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,242,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,242,255,.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Glow orbs */
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(120px);
+      pointer-events: none; z-index: 0;
+    }
+    .orb-1 { width: 600px; height: 600px; top: -200px; left: -200px; background: rgba(0,242,255,.07); }
+    .orb-2 { width: 500px; height: 500px; bottom: -150px; right: -150px; background: rgba(124,58,237,.09); }
+
+    /* ── NAV ──────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 6vw;
+      background: rgba(5,8,16,.75);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.1rem; letter-spacing: 6px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-brand span { color: var(--accent); }
+    .nav-links { display: flex; gap: 10px; }
+    .nav-links a {
+      padding: 9px 20px; border-radius: 10px;
+      font-size: .85rem; font-weight: 600; text-decoration: none;
+      transition: all .2s;
+    }
+    .nav-login {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .nav-login:hover { border-color: var(--accent); color: var(--accent); }
+    .nav-register {
+      background: var(--accent);
+      color: #001a1f;
+    }
+    .nav-register:hover { opacity: .88; transform: translateY(-1px); }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 92vh;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      text-align: center;
+      padding: 80px 6vw 60px;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px;
+      background: rgba(0,242,255,.08);
+      border: 1px solid rgba(0,242,255,.2);
+      border-radius: 100px;
+      font-family: 'Space Mono', monospace;
+      font-size: .72rem; letter-spacing: 2px;
+      color: var(--accent);
+      margin-bottom: 36px;
+      animation: fade-up .8s ease both;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
+
+    .hero-title {
+      font-size: clamp(3rem, 9vw, 7rem);
+      font-weight: 800; line-height: .95;
+      letter-spacing: -2px;
+      margin-bottom: 28px;
+      animation: fade-up .9s .1s ease both;
+    }
+    .hero-title .line2 { color: var(--accent); display: block; }
+
+    .hero-sub {
+      max-width: 560px;
+      font-size: clamp(.95rem, 2vw, 1.15rem);
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 48px;
+      animation: fade-up .9s .2s ease both;
+    }
+
+    .hero-cta {
+      display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+      animation: fade-up .9s .3s ease both;
+    }
+    .btn-primary {
+      padding: 15px 34px;
+      background: var(--accent);
+      color: #001a1f;
+      border-radius: 12px;
+      font-weight: 800; font-size: 1rem;
+      text-decoration: none;
+      transition: all .2s;
+      box-shadow: 0 0 30px rgba(0,242,255,.25);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(0,242,255,.4); }
+    .btn-ghost {
+      padding: 15px 34px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-weight: 600; font-size: 1rem;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── STATS ROW ────────────────────────────────────── */
+    .stats-row {
+      position: relative; z-index: 1;
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-item {
+      flex: 1; min-width: 160px;
+      padding: 28px 20px; text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      display: block;
+      font-family: 'Space Mono', monospace;
+      font-size: 2rem; font-weight: 700;
+      color: var(--accent);
+    }
+    .stat-label {
+      font-size: .8rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+    }
+
+    /* ── SECTION HEADER ───────────────────────────────── */
+    section { position: relative; z-index: 1; padding: 100px 6vw; }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: .7rem; letter-spacing: 4px; color: var(--accent);
+      text-transform: uppercase; margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 800; line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      color: var(--muted); font-size: 1rem; line-height: 1.7;
+      max-width: 520px; margin-bottom: 60px;
+    }
+
+    /* ── MODES GRID ───────────────────────────────────── */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .mode-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      transition: all .25s;
+      cursor: default;
+    }
+    .mode-card:hover {
+      border-color: rgba(0,242,255,.3);
+      background: rgba(0,242,255,.05);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.3);
+    }
+    .mode-emoji { font-size: 2rem; margin-bottom: 14px; display: block; }
+    .mode-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+    .mode-desc { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── FEATURES LIST ────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .feature-item {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 24px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      transition: border-color .2s;
+    }
+    .feature-item:hover { border-color: rgba(0,242,255,.25); }
+    .feature-icon {
+      width: 42px; height: 42px; flex-shrink: 0;
+      background: rgba(0,242,255,.1);
+      border: 1px solid rgba(0,242,255,.2);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+    .feature-text h4 { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+    .feature-text p  { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── HOW IT WORKS ─────────────────────────────────── */
+    .steps-list {
+      display: flex; flex-direction: column; gap: 0;
+      max-width: 700px;
+    }
+    .step {
+      display: flex; gap: 28px; align-items: flex-start;
+      padding: 32px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.5rem; font-weight: 700; color: var(--accent);
+      min-width: 40px;
+    }
+    .step-body h4 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .step-body p  { font-size: .88rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── CTA BANNER ───────────────────────────────────── */
+    .cta-banner {
+      margin: 0 6vw 100px;
+      background: linear-gradient(135deg, rgba(0,242,255,.08), rgba(124,58,237,.08));
+      border: 1px solid rgba(0,242,255,.18);
+      border-radius: 28px;
+      padding: 70px 6vw;
+      text-align: center;
+    }
+    .cta-banner h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800; margin-bottom: 14px;
+    }
+    .cta-banner p { color: var(--muted); margin-bottom: 36px; font-size: 1rem; }
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 28px 6vw;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px;
+    }
+    footer p { font-size: .8rem; color: var(--muted); }
+    .footer-brand {
+      font-family: 'Space Mono', monospace;
+      font-size: .9rem; letter-spacing: 4px; color: var(--text);
+    }
+    .footer-brand span { color: var(--accent); }
+
+    /* ── RESPONSIVE ───────────────────────────────────── */
+    @media (max-width: 640px) {
+      nav { padding: 14px 4vw; }
+      .nav-login { display: none; }
+      .hero { padding: 60px 4vw 40px; }
+      .stat-item { min-width: 140px; padding: 20px 14px; }
+      section { padding: 70px 4vw; }
+      .cta-banner { margin: 0 4vw 70px; padding: 50px 5vw; }
+    }
+  </style>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml" />
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="{{ url_for('landing.landing_page') }}" class="nav-brand">ZENITH <span>OX</span></a>
+    <div class="nav-links">
+      <a href="{{ url_for('auth.login_page') }}" class="nav-links nav-login">Sign in</a>
+      <a href="{{ url_for('auth.register') }}" class="nav-links nav-register">Get started</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      INTELLIGENT RESEARCH ASSISTANT
+    </div>
+    <h1 class="hero-title">
+      Think faster.<br>
+      <span class="line2">Research smarter.</span>
+    </h1>
+    <p class="hero-sub">
+      Zenith OX combines six specialist AI modes, persistent vector memory,
+      real-time web search, OCR image analysis, and file intelligence —
+      all in one secure, modular assistant.
+    </p>
+    <div class="hero-cta">
+      <a href="{{ url_for('auth.register') }}" class="btn-primary">Start for free</a>
+      <a href="{{ url_for('auth.login_page') }}" class="btn-ghost">Sign in →</a>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-item">
+      <span class="stat-num">6</span>
+      <span class="stat-label">AI Modes</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">TF-IDF</span>
+      <span class="stat-label">Vector Memory</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">OCR</span>
+      <span class="stat-label">Image Analysis</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">10+</span>
+      <span class="stat-label">File Formats</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">∞</span>
+      <span class="stat-label">Chat History</span>
+    </div>
+  </div>
+
+  <!-- MODES -->
+  <section id="modes">
+    <p class="section-label">// AI Modes</p>
+    <h2 class="section-title">Six assistants. One platform.</h2>
+    <p class="section-sub">
+      Each mode has its own tuned model, system prompt, and memory namespace — switch instantly from the menu.
+    </p>
+    <div class="modes-grid">
+      <div class="mode-card">
+        <span class="mode-emoji">🔍</span>
+        <div class="mode-name">AI Researcher</div>
+        <div class="mode-desc">Live Tavily web search + TF-IDF memory recall. Ask anything and get answers grounded in real data.</div>
+      </div>
+      <div class="mode-card">
+        <span class="mode-emoji">💻</span>
+        <div class="mode-name">AI Developer</div>
+        <div class="mode-desc">Code generation, debugging, file analysis, and downloadable ZIP export of multi-file projects.</div>
+      </div>
+      <div class="mode-card">
+        <span class="mode-emoji">📖</span>
+        <div class="mode-name">AI Story Writer</div>
+        <div class="mode-desc">Creative writing — stories, poetry, scripts, and world-building with vivid imagination.</div>
+      </div>
+      <div class="mode-card">
+        <span class="mode-emoji">🧮</span>
+        <div class="mode-name">AI Solve It</div>
+        <div class="mode-desc">Step-by-step maths from arithmetic to calculus, with verified answers and clear workings.</div>
+      </div>
+      <div class="mode-card">
+        <span class="mode-emoji">✉️</span>
+        <div class="mode-name">AI Email Writer</div>
+        <div class="mode-desc">Professional emails with subject, greeting, body, and sign-off — ready to copy in seconds.</div>
+      </div>
+      <div class="mode-card">
+        <span class="mode-emoji">📊</span>
+        <div class="mode-name">AI Slides Generator</div>
+        <div class="mode-desc">Describe your topic; receive a downloadable .pptx presentation with structured slide content.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" style="background: var(--bg1); margin: 0; max-width: none; width: 100%;">
+    <div style="max-width:1200px; margin: 0 auto;">
+      <p class="section-label">// Features</p>
+      <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+      <p class="section-sub">Built lean on purpose — fast, deployable, and extensible.</p>
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">🧠</div>
+          <div class="feature-text">
+            <h4>Persistent Vector Memory</h4>
+            <p>TF-IDF + cosine similarity retrieves your most relevant past exchanges per mode. Accessible as a sidebar even after logout.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔍</div>
+          <div class="feature-text">
+            <h4>Real-time Web Search</h4>
+            <p>Researcher mode fetches live Tavily results and injects them directly into the AI prompt for grounded, current answers.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">👁️</div>
+          <div class="feature-text">
+            <h4>OCR Image Analysis</h4>
+            <p>Upload any image — Tesseract OCR extracts the text and passes it to the AI as readable context. No external vision API needed.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📎</div>
+          <div class="feature-text">
+            <h4>Universal File Upload</h4>
+            <p>PDF, DOCX, XLSX, PPTX, CSV, JSON, code files, ZIP/RAR archives — content is extracted and injected into any mode's prompt.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔐</div>
+          <div class="feature-text">
+            <h4>Secure Auth</h4>
+            <p>Email + password (Werkzeug salted hashes) or optional Google OAuth. Accounts from both methods share the same record.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">💾</div>
+          <div class="feature-text">
+            <h4>Download Outputs</h4>
+            <p>Slides Generator produces real .pptx files. Developer mode packages code blocks into a .zip for immediate download.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <p class="section-label">// How it works</p>
+    <h2 class="section-title">From login to insight in four steps.</h2>
+    <p class="section-sub">A clear, opinionated flow designed to keep you focused on thinking.</p>
+    <div class="steps-list">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h4>Create an account</h4>
+          <p>Register with an email and password, or continue with Google if configured. Accounts are stored securely with salted password hashes.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h4>Choose your AI mode</h4>
+          <p>Pick from six specialist modes on the menu page — each has its own tuned model, system prompt, temperature, and memory namespace.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h4>Chat, upload, and research</h4>
+          <p>Ask questions, upload documents or images, and let Zenith OX pull in relevant memory and live web context to build a precise answer.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <h4>Review your history anytime</h4>
+          <p>The memory sidebar lists all past conversations per mode — accessible even after you log out — so your research context is never lost.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <div class="cta-banner">
+    <h2>Ready to start researching?</h2>
+    <p>Free to use. No credit card. Runs locally or on Vercel.</p>
+    <div class="hero-cta">
+      <a href="{{ url_for('auth.register') }}" class="btn-primary">Create your account</a>
+      <a href="{{ url_for('auth.login_page') }}" class="btn-ghost">Already have one →</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-brand">ZENITH <span>OX</span></span>
+    <p>Flask · Groq · TF-IDF · Tesseract OCR · Tavily · Vercel</p>
+    <p>Secure auth · Vector memory · 6 AI modes</p>
+  </footer>
+</body>
+</html>

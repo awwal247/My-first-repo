@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith OX v4.0 — {{ mode.name }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
+
+  <!-- marked.js + highlight.js + KaTeX -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <script>
+    // Pass mode to JS
+    window.ZENITH_MODE = {{ mode_key|tojson }};
+  </script>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ═══════════════════════════════════════════
+       CHAT HISTORY SIDEBAR (left)
+       ═══════════════════════════════════════════ -->
+  <aside class="zh-sidebar" id="zh-sidebar" aria-label="Chat history">
+    <div class="zh-sidebar-header">
+      <span class="zh-sidebar-title">💬 Chats</span>
+      <button id="zh-new-chat-btn" type="button" aria-label="Start a new chat">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5"  y1="12" x2="19" y2="12"/>
+        </svg>
+        New Chat
+      </button>
+    </div>
+
+    <!-- v4.0: Search bar -->
+    <div class="zh-search-box">
+      <input type="text" id="chatSearch" placeholder="🔍 Search chats..." autocomplete="off">
+    </div>
+
+    <!-- Chat list -->
+    <div id="zh-chat-list" role="list" aria-label="Saved conversations">
+      <div class="zh-loading">Loading chats…</div>
+    </div>
+  </aside>
+
+  <!-- Mobile backdrop -->
+  <div class="zh-backdrop" id="zh-backdrop" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN CHAT AREA
+       ═══════════════════════════════════════════ -->
+  <div class="chat-main">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <!-- Mobile sidebar toggle -->
+        <button id="zh-sidebar-toggle" class="zh-sidebar-toggle-btn" type="button" aria-label="Toggle chat history">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6"  x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+
+        <div id="modeIndicator">
+          <span class="mode-emoji">{{ mode.emoji }}</span>
+          <span>{{ mode.name }}</span>
+        </div>
+      </div>
+
+      <div class="top-bar-actions">
+        <!-- v4.0: Voice input button -->
+        <button id="micBtn" class="icon-btn" title="Voice input" aria-label="Voice input">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+        </button>
+
+        <!-- v4.0: Dark mode toggle -->
+        <button id="darkModeBtn" class="icon-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+          <svg id="moonIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg id="sunIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+
+        <!-- Memory sidebar button -->
+        <button id="memoryBtn" class="icon-btn" title="Memory" aria-label="Open memory sidebar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+        </button>
+
+        <!-- v4.0: Export dropdown -->
+        <div style="position:relative">
+          <button id="exportBtn" class="icon-btn" title="Export chat" aria-label="Export chat">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <div id="exportDropdown" class="export-dropdown">
+            <button data-format="md">📝 Markdown (.md)</button>
+            <button data-format="txt">📄 Text (.txt)</button>
+            <button data-format="json">🔧 JSON (.json)</button>
+          </div>
+        </div>
+
+        <!-- v4.0: Regenerate button -->
+        <button id="regenerateBtn" class="icon-btn" title="Regenerate last response" aria-label="Regenerate">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+          </svg>
+        </button>
+
+        <button id="clearBtn" class="icon-btn" title="Clear memory" aria-label="Clear memory">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+          </svg>
+        </button>
+
+        <button id="logoutBtn" class="icon-btn" title="Logout" aria-label="Logout">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat messages -->
+    <div id="chat-box">
+      <div class="message bot welcome">
+        <strong>{{ greeting }}</strong> 👋<br><br>
+        You are in <strong>{{ mode.name }}</strong> mode.<br>
+        {{ mode.tagline }}<br><br>
+        <small>Type a message below or upload files to get started.</small>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <!-- v4.0: Multi-file preview -->
+      <div id="file-preview" class="hidden"></div>
+
+      <div class="file-actions">
+        <!-- v4.0: Multi-file upload -->
+        <button type="button" class="file-btn" id="fileBtn" title="Attach files">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+          </svg>
+          Attach Files
+        </button>
+        <!-- Hidden multi-file input -->
+        <input type="file" id="fileInput" multiple accept=".pdf,.docx,.xlsx,.csv,.txt,.md,.py,.js,.html,.css,.json,.png,.jpg,.jpeg,.gif,.webp,.zip">
+        <span id="fileCount" style="font-size:12px;color:#9ca3af"></span>
+      </div>
+
+      <div class="input-row">
+        <form id="chatForm">
+          <textarea id="user-input" placeholder="Ask {{ mode.name }} anything..." rows="1"></textarea>
+          <button type="submit" id="sendBtn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            Send
+          </button>
+        </form>
+      </div>
+
+      <!-- Bottom toolbar -->
+      <div class="bottom-toolbar">
+        <div class="toolbar-left">
+          <span style="font-size:11px;color:#9ca3af">Zenith OX v4.0</span>
+        </div>
+        <div class="toolbar-right">
+          <button class="toolbar-btn" id="uploadCodeBtn" title="Upload code project">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Code Project
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MEMORY SIDEBAR (slides from left)
+     ═══════════════════════════════════════════ -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="memory-sidebar" id="memorySidebar">
+  <div class="sidebar-header">
+    <h3>🧠 Memory</h3>
+    <button id="sidebarClose" aria-label="Close memory sidebar">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div id="sidebarBody">
+    <div id="sidebarEmpty">No memories yet.<br>Start chatting!</div>
+  </div>
+</aside>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Hidden code project input -->
+<input type="file" id="codeInput" accept=".zip,.rar" style="display:none">
+
+<!-- ═══════════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════════ -->
+<script src="{{ url_for('static', filename='js/chat_history_redesign.js') }}"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
