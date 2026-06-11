@@ -1,41 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Zenith OX — Register</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <link rel="icon" href="{{ url_for('static',filename='favicon.svg') }}" type="image/svg+xml"/>
-  <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith OX — Register</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="auth-body">
-  <div class="glass-card auth-card">
-    <h1>ZENITH <span class="accent">OX</span></h1>
-    <p class="tagline">Create your account</p>
-    {% with messages=get_flashed_messages(with_categories=true) %}
-      {% for category,msg in messages %}<div class="flash flash-{{ category }}">{{ msg }}</div>{% endfor %}
-    {% endwith %}
-    <form class="auth-form" method="POST" action="{{ url_for('auth.register') }}">
-      <label for="name">Display name <span style="color:#00f2ff;font-size:.82em">*required</span></label>
-      <input type="text" id="name" name="name" required
-             placeholder="e.g. Alice" autocomplete="name"/>
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" required
-             placeholder="you@example.com" autocomplete="email"/>
-      <label for="password">Password (min 6 chars)</label>
-      <input type="password" id="password" name="password" required
-             minlength="6" placeholder="Choose a password" autocomplete="new-password"/>
-      <label for="confirm">Confirm password</label>
-      <input type="password" id="confirm" name="confirm" required
-             minlength="6" placeholder="Repeat your password" autocomplete="new-password"/>
-      <button type="submit">Create account</button>
-    </form>
-    {% if google_enabled() %}
-      <div class="divider"><span>or</span></div>
-      <a class="google-btn" href="{{ url_for('auth.login_google') }}">
-        <span class="g-icon">G</span> Sign up with Google
-      </a>
-    {% endif %}
-    <p class="foot">Already have an account? <a href="{{ url_for('auth.login_page') }}">Login here</a></p>
-  </div>
+<body>
+    <div class="auth-container">
+        <h1>Create your account</h1>
+        {% with messages=get_flashed_messages(with_categories=true) %}
+        {% for category,msg in messages %}
+        <div class="alert alert-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+        {% endwith %}
+        <form method="POST" action="/register">
+            <label>Display name *required</label>
+            <input type="text" name="name" required>
+            <label>Email</label>
+            <input type="email" name="email" required>
+            <label>Password (min 6 chars)</label>
+            <input type="password" name="password" required minlength="6">
+            <label>Confirm password</label>
+            <input type="password" name="confirm" required>
+            <button type="submit">Create Account</button>
+        </form>
+        {% if google_enabled() %}
+        <div class="divider">or</div>
+        <a href="/login/google" class="google-btn">G Sign up with Google</a>
+        {% endif %}
+        <p>Already have an account? <a href="/login">Login here</a></p>
+    </div>
 </body>
 </html>

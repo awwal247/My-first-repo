@@ -2,8 +2,8 @@
 app/routes/main.py
 ==================
 UI navigation routes (authenticated):
-  GET /chat   -- chat interface (requires login + mode)
-  GET /menu   -- AI mode selection
+  GET /chat -- chat interface (requires login + mode)
+  GET /menu -- AI mode selection
   GET /select-mode/<mode_key> -- set the active AI mode in the session
 """
 
@@ -21,7 +21,6 @@ from app.utils.auth import time_based_greeting
 
 main_bp = Blueprint("main", __name__)
 
-
 @main_bp.route("/chat")
 def index():
     if "user_id" not in session:
@@ -30,7 +29,7 @@ def index():
         return redirect(url_for("main.menu"))
 
     mode_key = session["ai_mode"]
-    mode     = AI_MODES.get(mode_key, AI_MODES["researcher"])
+    mode = AI_MODES.get(mode_key, AI_MODES["researcher"])
     username = session.get("display_name") or session["user_id"]
     greeting = time_based_greeting(username)
 
@@ -41,7 +40,6 @@ def index():
         mode=mode,
         mode_key=mode_key,
     )
-
 
 @main_bp.route("/menu")
 def menu():
@@ -57,7 +55,6 @@ def menu():
         greeting=greeting,
         modes=AI_MODES,
     )
-
 
 @main_bp.route("/select-mode/<mode_key>")
 def select_mode(mode_key: str):

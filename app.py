@@ -5,9 +5,9 @@ Application entry point for **local development**.
 
 Usage
 -----
-    python app.py
-    # or via Flask CLI:
-    flask run
+ python app.py
+ # or via Flask CLI:
+ flask run
 
 For production deployments (e.g. Vercel) the WSGI adapter
 lives in ``api/index.py``.

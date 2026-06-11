@@ -28,7 +28,7 @@ def register():
         return redirect(url_for("auth.login_page"))
     try:
         user=db_create_user(email=email,display_name=name,
-                            password_hash=generate_password_hash(password),google_id=None)
+            password_hash=generate_password_hash(password),google_id=None)
     except RuntimeError as exc:
         flash(f"Could not create account: {exc}","error"); return redirect(url_for("auth.register"))
     session["user_id"]=str(user["id"]); session["display_name"]=user["display_name"]

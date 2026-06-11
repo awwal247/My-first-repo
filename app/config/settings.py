@@ -22,10 +22,10 @@ class Config:
 
     # Flask
     SECRET_KEY: str = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
-    DEBUG: bool     = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    DEBUG: bool = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
     # AI / Groq (fallback)
-    GROQ_API_KEY: str  = os.getenv("GROQ_API_KEY", "")
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
 
     # HuggingFace (primary — v4.0)
@@ -42,24 +42,24 @@ class Config:
     TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
 
     # Google OAuth
-    GOOGLE_CLIENT_ID: str     = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
     # Database (Supabase / PostgreSQL)
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
 
     # Storage (legacy paths — kept for local dev reference only)
-    BASE_DIR: str      = os.path.dirname(
+    BASE_DIR: str = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
-    USERS_FILE: str    = os.path.join(BASE_DIR, "users.json")
-    MEMORY_FILE: str   = os.path.join(BASE_DIR, "memory.json")
-    WRITABLE_USERS: str  = "/tmp/users.json"
+    USERS_FILE: str = os.path.join(BASE_DIR, "users.json")
+    MEMORY_FILE: str = os.path.join(BASE_DIR, "memory.json")
+    WRITABLE_USERS: str = "/tmp/users.json"
     WRITABLE_MEMORY: str = "/tmp/memory.json"
 
     # Memory limits
-    MEMORY_LIMIT: int  = 15
-    TOP_K_MEMORY: int  = 3
+    MEMORY_LIMIT: int = 15
+    TOP_K_MEMORY: int = 3
 
     # Upload limits
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10 MB

@@ -12,7 +12,7 @@ Image files (.png .jpg .jpeg .gif .bmp .webp .tiff .tif) are no longer
 processed with pytesseract OCR. Instead, they are base64-encoded and
 returned as a vision payload dict:
 
-    {"__vision__": True, "b64": <str>, "media_type": <str>, "meta": <str>}
+  {"__vision__": True, "b64": <base64>, "media_type": <mime>, "meta": <str>}
 
 The caller (app/routes/chat.py) detects this sentinel and routes the
 request to ask_groq_vision() instead of the text pipeline.
@@ -74,10 +74,9 @@ _IMAGE_MIME: dict[str, str] = {
 _CODE_BLOCK_RE = re.compile(r"```(\w*)\n(.*?)```", re.DOTALL)
 
 _FILE_COMMENT_RE = re.compile(
-    r"^(?:#|//|<!--|/\*)?\s*File:\s*(.+?)(?:\s*-->|\s*\*)?\s*$",
+    r"^(?:#|//|/\s*\*\*)?\s*File:\s*(.+)$",
     re.IGNORECASE,
 )
-
 
 # ===========================================================================
 # Code-block extraction & ZIP generation
@@ -108,7 +107,6 @@ def extract_code_blocks(text: str) -> list[dict]:
         })
     return blocks
 
-
 def save_code_as_zip(code_blocks: list[dict]) -> dict | None:
     """
     Package named / substantial code blocks into a ZIP archive in /tmp.
@@ -133,7 +131,7 @@ def save_code_as_zip(code_blocks: list[dict]) -> dict | None:
             ext = LANG_EXTENSIONS.get(lang, ".txt")
             if len(code_blocks) == 1:
                 block["filename"] = f"main{ext}"
-                named_blocks.append(block)
+            named_blocks.append(block)
 
     if not named_blocks:
         return None
@@ -162,7 +160,6 @@ def save_code_as_zip(code_blocks: list[dict]) -> dict | None:
         "url": f"/download-zip/{zip_filename}",
         "files": sorted(used_names),
     }
-
 
 # ===========================================================================
 # Archive reading (ZIP / RAR)
@@ -233,7 +230,6 @@ def read_archive(file_storage) -> tuple[dict | None, str | None]:
 
     return files, None
 
-
 # ===========================================================================
 # Universal file-content extractor
 # ===========================================================================
@@ -243,11 +239,11 @@ def extract_file_content(file_storage) -> tuple:
     Extract readable content from any uploaded file type.
 
     For image files returns a vision payload dict:
-        ({"__vision__": True, "b64": ..., "media_type": ..., "meta": ...}, None)
+    ({"__vision__": True, "b64": ..., "media_type": ..., "meta": ...}, None)
 
     For all other types returns:
-        (content_string, None)  on success
-        (None, error_message)   on failure
+    (content_string, None) on success
+    (None, error_message) on failure
     """
     filename: str = file_storage.filename or "unknown"
     ext = os.path.splitext(filename)[1].lower()
@@ -400,7 +396,6 @@ def extract_file_content(file_storage) -> tuple:
     except Exception as exc:
         return None, f"Error reading file: {exc}"
 
-
 # ===========================================================================
 # Prompt formatters
 # ===========================================================================
@@ -415,7 +410,6 @@ def format_files_for_prompt(files_dict: dict[str, str]) -> str:
         for path, content in sorted(files_dict.items())
     ]
     return _truncate("\n\n".join(parts), 30_000)
-
 
 # ===========================================================================
 # Internal helpers

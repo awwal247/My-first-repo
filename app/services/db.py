@@ -25,7 +25,6 @@ from psycopg2.extras import RealDictCursor
 # Connection helpers
 # ---------------------------------------------------------------------------
 
-
 def get_connection():
     """Create a fresh PostgreSQL connection from DATABASE_URL."""
     db_url = os.getenv("DATABASE_URL", "")
@@ -37,17 +36,14 @@ def get_connection():
     except Exception as exc:
         raise RuntimeError(f"Database connection failed: {exc}") from exc
 
-
 def close_connection(conn):
     """Safely close a connection."""
     if conn:
         conn.close()
 
-
 # ---------------------------------------------------------------------------
 # User operations
 # ---------------------------------------------------------------------------
-
 
 def db_create_user(email: str, display_name: str, password_hash: str | None, google_id: str | None) -> dict:
     conn = get_connection()
@@ -70,7 +66,6 @@ def db_create_user(email: str, display_name: str, password_hash: str | None, goo
     finally:
         close_connection(conn)
 
-
 def db_find_user_by_email(email: str) -> dict | None:
     conn = get_connection()
     try:
@@ -83,7 +78,6 @@ def db_find_user_by_email(email: str) -> dict | None:
     finally:
         close_connection(conn)
 
-
 def db_find_user_by_google_id(google_id: str) -> dict | None:
     conn = get_connection()
     try:
@@ -95,7 +89,6 @@ def db_find_user_by_google_id(google_id: str) -> dict | None:
         raise RuntimeError(f"Database error: {exc}") from exc
     finally:
         close_connection(conn)
-
 
 def db_link_google_id(user_id: str, google_id: str) -> None:
     conn = get_connection()
@@ -112,11 +105,9 @@ def db_link_google_id(user_id: str, google_id: str) -> None:
     finally:
         close_connection(conn)
 
-
 # ---------------------------------------------------------------------------
 # Conversation operations (per-message memory)
 # ---------------------------------------------------------------------------
-
 
 def db_save_message(user_id: str, mode_key: str, role: str, content: str) -> None:
     conn = get_connection()
@@ -135,7 +126,6 @@ def db_save_message(user_id: str, mode_key: str, role: str, content: str) -> Non
         raise RuntimeError(f"Could not save message: {exc}") from exc
     finally:
         close_connection(conn)
-
 
 def db_get_conversation(user_id: str, mode_key: str, limit: int = 60) -> list[dict]:
     conn = get_connection()
@@ -157,7 +147,6 @@ def db_get_conversation(user_id: str, mode_key: str, limit: int = 60) -> list[di
     finally:
         close_connection(conn)
 
-
 def db_clear_conversation(user_id: str, mode_key: str) -> None:
     conn = get_connection()
     try:
@@ -172,7 +161,6 @@ def db_clear_conversation(user_id: str, mode_key: str) -> None:
         raise RuntimeError(f"Could not clear conversation: {exc}") from exc
     finally:
         close_connection(conn)
-
 
 def db_get_all_modes_memory(user_id: str) -> dict[str, list[dict]]:
     """Return all conversations grouped by mode_key."""
@@ -201,11 +189,9 @@ def db_get_all_modes_memory(user_id: str) -> dict[str, list[dict]]:
     finally:
         close_connection(conn)
 
-
 # ---------------------------------------------------------------------------
 # Chat session operations (chats table) — v4.0 with pinned support
 # ---------------------------------------------------------------------------
-
 
 def db_create_chat(user_id: str, title: str, mode: str, messages: list) -> str:
     """Create a new chat session and return its UUID."""
@@ -228,7 +214,6 @@ def db_create_chat(user_id: str, title: str, mode: str, messages: list) -> str:
     finally:
         close_connection(conn)
 
-
 def db_get_chat(chat_id: str) -> dict | None:
     """Get a single chat by ID."""
     conn = get_connection()
@@ -241,7 +226,6 @@ def db_get_chat(chat_id: str) -> dict | None:
         raise RuntimeError(f"Could not load chat: {exc}") from exc
     finally:
         close_connection(conn)
-
 
 def db_get_user_chats(user_id: str) -> list[dict]:
     """Get all chats for a user, sorted by pinned first then updated_at desc."""
@@ -263,7 +247,6 @@ def db_get_user_chats(user_id: str) -> list[dict]:
         raise RuntimeError(f"Could not load chats: {exc}") from exc
     finally:
         close_connection(conn)
-
 
 def db_update_chat(chat_id: str, title: str | None = None, messages: list | None = None, mode: str | None = None) -> None:
     """Update a chat's title, messages, and/or mode."""
@@ -296,7 +279,6 @@ def db_update_chat(chat_id: str, title: str | None = None, messages: list | None
     finally:
         close_connection(conn)
 
-
 def db_delete_chat(chat_id: str) -> None:
     """Permanently delete a chat session."""
     conn = get_connection()
@@ -310,9 +292,7 @@ def db_delete_chat(chat_id: str) -> None:
     finally:
         close_connection(conn)
 
-
 # v4.0 — Pin / unpin a chat
-
 
 def db_toggle_pin(chat_id: str) -> bool:
     """Toggle the pinned state of a chat. Returns the new pinned value."""
@@ -332,9 +312,7 @@ def db_toggle_pin(chat_id: str) -> bool:
     finally:
         close_connection(conn)
 
-
 # v4.0 — Rename a chat
-
 
 def db_rename_chat(chat_id: str, new_title: str) -> None:
     """Rename a chat session."""
@@ -352,9 +330,7 @@ def db_rename_chat(chat_id: str, new_title: str) -> None:
     finally:
         close_connection(conn)
 
-
 # v4.0 — Search chats
-
 
 def db_search_chats(user_id: str, query: str) -> list[dict]:
     """Search user's chats by title or message content."""
@@ -382,9 +358,7 @@ def db_search_chats(user_id: str, query: str) -> list[dict]:
     finally:
         close_connection(conn)
 
-
 # v4.0 — Restore chat (update timestamp to bring to top)
-
 
 def db_restore_chat(chat_id: str) -> None:
     """Restore a chat by bumping its updated_at timestamp."""

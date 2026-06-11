@@ -4,29 +4,29 @@
    Regenerate, Edit, Charts, Memory Sidebar
    ========================================================== */
 (() => {
-  const chatBox     = document.getElementById("chat-box");
-  const form        = document.getElementById("chatForm");
-  const input       = document.getElementById("user-input");
-  const sendBtn     = document.getElementById("sendBtn");
-  const clearBtn    = document.getElementById("clearBtn");
-  const logoutBtn   = document.getElementById("logoutBtn");
-  const micBtn      = document.getElementById("micBtn");
+  const chatBox = document.getElementById("chat-box");
+  const form = document.getElementById("chatForm");
+  const input = document.getElementById("user-input");
+  const sendBtn = document.getElementById("sendBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const micBtn = document.getElementById("micBtn");
   const darkModeBtn = document.getElementById("darkModeBtn");
-  const exportBtn   = document.getElementById("exportBtn");
+  const exportBtn = document.getElementById("exportBtn");
   const exportDropdown = document.getElementById("exportDropdown");
-  const regenerateBtn  = document.getElementById("regenerateBtn");
-  const fileInput   = document.getElementById("fileInput");
-  const fileBtn     = document.getElementById("fileBtn");
+  const regenerateBtn = document.getElementById("regenerateBtn");
+  const fileInput = document.getElementById("fileInput");
+  const fileBtn = document.getElementById("fileBtn");
   const filePreview = document.getElementById("file-preview");
-  const fileCount   = document.getElementById("fileCount");
-  const moonIcon    = document.getElementById("moonIcon");
-  const sunIcon     = document.getElementById("sunIcon");
-  const hljsTheme   = document.getElementById("hljs-theme");
+  const fileCount = document.getElementById("fileCount");
+  const moonIcon = document.getElementById("moonIcon");
+  const sunIcon = document.getElementById("sunIcon");
+  const hljsTheme = document.getElementById("hljs-theme");
   const toastContainer = document.getElementById("toastContainer");
 
   /* -- marked.js config -- */
   const renderer = new marked.Renderer();
-  const FILE_RE  = new RegExp("^(?:#|//|<!--|/\\*)\\s*File:\\s*(.+?)(?:\\s*-->|\\s*\\*/)?\\s*$", "i");
+  const FILE_RE = new RegExp("^(?:#|//|/\s*\*/)?\s*File:\s*(.+)$", "i");
 
   renderer.code = function({ text, lang }) {
     const code=text||"", language=lang||"plaintext";
@@ -35,12 +35,12 @@
     if(lines.length>0){const m=lines[0].trim().match(FILE_RE);if(m){filename=m[1].trim();cleanCode=lines.slice(1).join("\n").trim();}}
     let hl;
     try{hl=hljs.getLanguage(language)?hljs.highlight(cleanCode,{language}).value:hljs.highlightAuto(cleanCode).value;}
-    catch(e){hl=cleanCode.replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-    const label=filename?"<strong>"+filename+"</strong>":language;
-    return'<div class="code-block-wrapper"><div class="code-header"><span class="code-lang">'+label+
-      '</span><button class="copy-btn" onclick="copyCode(this)" data-code="'+
-      btoa(unescape(encodeURIComponent(cleanCode)))+'">Copy</button></div>'+
-      '<pre><code class="hljs language-'+language+'">'+hl+'</code></pre></div>';
+    catch(e){hl=cleanCode.replace(/</g,"<").replace(/>/g,">");}
+    const label=filename?"📄 "+filename:language;
+    return'<div class="code-block-wrapper">'+
+      '<div class="code-header"><span class="code-lang">'+label+'</span><button class="copy-btn" onclick="copyCode(this)" data-code="'+btoa(unescape(encodeURIComponent(cleanCode)))+'">Copy</button></div>'+
+      '<pre><code class="hljs '+language+'">'+hl+'</code></pre>'+
+    '</div>';
   };
   marked.setOptions({renderer,breaks:true,gfm:true});
 
@@ -68,7 +68,7 @@
     filePreview.classList.remove("hidden");
     filePreview.innerHTML=pendingFiles.map((f,i)=>
       '<span class="file-tag">📎 '+esc(f.name)+' ('+(f.size/1024).toFixed(1)+' KB)'+
-      '<button type="button" data-index="'+i+'" title="Remove">&times;</button></span>'
+      '<button data-index="'+i+'">✕</button></span>'
     ).join("");
     fileCount.textContent=pendingFiles.length+" file"+(pendingFiles.length>1?"s":"")+" selected";
     filePreview.querySelectorAll("button").forEach(btn=>{
@@ -81,7 +81,7 @@
   }
 
   /* -- helpers -- */
-  function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+  function esc(s){return(s||"").replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");}
 
   function addMessage(text,cls){
     const d=document.createElement("div");d.className="message "+(cls||"bot");
@@ -92,27 +92,27 @@
 
   function addFileIndicator(filename){
     const d=document.createElement("div");d.className="message user file-indicator";
-    d.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg> '+esc(filename);
+    d.innerHTML='📎 '+esc(filename);
     chatBox.appendChild(d);chatBox.scrollTop=chatBox.scrollHeight;
   }
 
   function addTyping(){
     const d=document.createElement("div");d.className="message bot";
-    d.innerHTML='<span class="typing"><span></span><span></span><span></span></span>';
+    d.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
     chatBox.appendChild(d);chatBox.scrollTop=chatBox.scrollHeight;return d;
   }
 
   function renderMath(el){
-    if(window.renderMathInElement)renderMathInElement(el,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}],throwOnError:false});
+    if(window.renderMathInElement)renderMathInElement(el,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\(",right:"\)",display:false},{left:"\[",right:"\]",display:true}],throwOnError:false});
   }
 
   function addCopyBtn(wrapper,txt){
     const btn=document.createElement("button");btn.className="msg-copy-btn";btn.title="Copy response";
-    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+    btn.innerHTML='📋';
     btn.addEventListener("click",()=>{
       navigator.clipboard.writeText(txt).then(()=>{
-        btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
-        setTimeout(()=>{btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';},2000);
+        btn.innerHTML='✓';
+        setTimeout(()=>{btn.innerHTML='📋';},2000);
       });
     });
     wrapper.appendChild(btn);
@@ -122,15 +122,13 @@
   function addMsgActions(wrapper, userText, botText){
     const actions=document.createElement("div");actions.className="msg-actions";
 
-    // Regenerate button
     const regenBtn=document.createElement("button");regenBtn.className="msg-action-btn";
-    regenBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Regenerate';
+    regenBtn.innerHTML='🔄 Regenerate';
     regenBtn.addEventListener("click",()=>{doRegenerate();});
     actions.appendChild(regenBtn);
 
-    // Edit button
     const editBtn=document.createElement("button");editBtn.className="msg-action-btn";
-    editBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit';
+    editBtn.innerHTML='✏️ Edit';
     editBtn.addEventListener("click",()=>{enableEdit(wrapper,userText||botText);});
     actions.appendChild(editBtn);
 
@@ -173,30 +171,21 @@
       }
       const batch=Math.min(4,words.length-i);
       for(let b=0;b<batch;b++)buf.push(words[i+b]);
-      i+=batch;content.textContent=buf.join(" ");chatBox.scrollTop=chatBox.scrollHeight;
-    },22);
+      i+=batch;
+      content.textContent=buf.join(" ")+"▌";
+      chatBox.scrollTop=chatBox.scrollHeight;
+    },12);
   }
 
-  /* -- Static render for history load -- */
-  function renderBotMessage(txt,dlUrl,dlName){
-    const wrapper=document.createElement("div");wrapper.className="message bot";
-    const content=document.createElement("div");content.className="md-content";
-    content.innerHTML=marked.parse(txt);renderMath(content);wrapper.appendChild(content);
-    if(dlUrl){const a=document.createElement("a");a.href=dlUrl;a.download=dlName||"download";a.className="download-btn";a.textContent="📥 Download "+(dlName||"file");wrapper.appendChild(a);}
-    addCopyBtn(wrapper,txt);addMsgActions(wrapper,null,txt);chatBox.appendChild(wrapper);chatBox.scrollTop=chatBox.scrollHeight;
-  }
-
-  /* -- Global appendChatMessage -- */
   window.appendChatMessage=function(role,content){
-    if(role==="user"){
-      if(content.startsWith("[Uploaded:")){
-        const fm=content.match(/\[Uploaded: (.+?)\]\s*(.*)/);
-        if(fm){addFileIndicator(fm[1]);if(fm[2])addMessage(fm[2],"user");}else addMessage(content,"user");
-      }else addMessage(content,"user");
-    }else renderBotMessage(content);
+    const isUser=role==="user";
+    const d=document.createElement("div");d.className="message "+(isUser?"user":"bot");
+    if(isUser){d.textContent=content;}
+    else{d.innerHTML='<div class="md-content">'+marked.parse(content)+'</div>';renderMath(d);addCopyBtn(d,content);addMsgActions(d,null,content);}
+    chatBox.appendChild(d);chatBox.scrollTop=chatBox.scrollHeight;
   };
 
-  /* -- Load history on page load -- */
+  /* -- Load history on start -- */
   async function loadHistory(){
     try{
       const r=await fetch("/history"),data=await r.json();
@@ -418,7 +407,7 @@
         lbl.innerHTML="<span>"+meta.emoji+"</span> "+meta.name;sec.appendChild(lbl);
         exchanges.forEach(ex=>{
           const item=document.createElement("div");item.className="sidebar-chat-item";
-          item.innerHTML="<div class=\"sidebar-chat-user\">👤 "+esc(ex.user)+"</div>"+(ex.assistant?"<div class=\"sidebar-chat-bot\">🤖 "+esc(ex.assistant)+(ex.assistant.length>=160?"…":"")+"</div>":"");
+          item.innerHTML="<div class=\"sidebar-chat-user\">"+esc(ex.user)+"</div><div class=\"sidebar-chat-bot\">"+esc(ex.assistant)+"</div>";
           sec.appendChild(item);
         });
         body.appendChild(sec);
@@ -426,7 +415,7 @@
     }catch(e){console.warn("Memory sidebar:",e);}
   }
 
-  function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+  function esc(s){return(s||"").replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");}
 
   window.addEventListener("zenith:message-sent",()=>{
     loaded=false;

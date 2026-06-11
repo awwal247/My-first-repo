@@ -2,15 +2,15 @@
 app/routes/chats.py
 ===================
 Chat session management API (RESTful):
-  GET    /api/chats              — list all chats for the user
-  POST   /api/chats/create       — create a new chat session
-  GET    /api/chats/<id>         — get a single chat
-  PUT    /api/chats/<id>         — update a chat (messages, title, mode)
-  DELETE /api/chats/<id>         — delete a chat
-  POST   /api/chats/<id>/pin    — toggle pin status
-  POST   /api/chats/<id>/rename — rename a chat
-  POST   /api/chats/<id>/restore — restore chat (bump to top)
-  GET    /api/chats/search?q=... — search chats
+  GET /api/chats — list all chats for the user
+  POST /api/chats/create — create a new chat session
+  GET /api/chats/<id> — get a single chat
+  PUT /api/chats/<id> — update a chat (messages, title, mode)
+  DELETE /api/chats/<id> — delete a chat
+  POST /api/chats/<id>/pin — toggle pin status
+  POST /api/chats/<id>/rename — rename a chat
+  POST /api/chats/<id>/restore — restore chat (bump to top)
+  GET /api/chats/search?q=... — search chats
 
 v4.0 changes:
   - All endpoints are auth-protected
@@ -37,11 +37,9 @@ from app.services.db import (
 
 chats_bp = Blueprint("chats", __name__, url_prefix="/api/chats")
 
-
 # ---------------------------------------------------------------------------
 # Auth helper
 # ---------------------------------------------------------------------------
-
 
 def _require_auth():
     """Return user_id or a JSON error response tuple."""
@@ -50,11 +48,9 @@ def _require_auth():
         return None, (jsonify({"ok": False, "error": "Not authenticated."}), 401)
     return uid, None
 
-
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
-
 
 @chats_bp.route("", methods=["GET"])
 def list_chats():
@@ -68,7 +64,6 @@ def list_chats():
         return jsonify({"ok": True, "chats": chats})
     except RuntimeError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
-
 
 @chats_bp.route("/create", methods=["POST"])
 def create_chat():
@@ -88,7 +83,6 @@ def create_chat():
     except RuntimeError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
-
 @chats_bp.route("/<chat_id>", methods=["GET"])
 def get_chat(chat_id: str):
     """GET /api/chats/<id> — get a single chat session."""
@@ -105,7 +99,6 @@ def get_chat(chat_id: str):
         return jsonify({"ok": True, "chat": chat})
     except RuntimeError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
-
 
 @chats_bp.route("/<chat_id>", methods=["PUT"])
 def update_chat(chat_id: str):
@@ -134,7 +127,6 @@ def update_chat(chat_id: str):
     except RuntimeError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
-
 @chats_bp.route("/<chat_id>", methods=["DELETE"])
 def delete_chat(chat_id: str):
     """DELETE /api/chats/<id> — permanently delete a chat."""
@@ -157,11 +149,7 @@ def delete_chat(chat_id: str):
     except RuntimeError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
-
-# ---------------------------------------------------------------------------
-# v4.0: Pin / Unpin
-# ---------------------------------------------------------------------------
-
+# v4.0 — Pin / unpin a chat
 
 @chats_bp.route("/<chat_id>/pin", methods=["POST"])
 def pin_chat(chat_id: str):
@@ -182,11 +170,7 @@ def pin_chat(chat_id: str):
     except RuntimeError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
-
-# ---------------------------------------------------------------------------
-# v4.0: Rename
-# ---------------------------------------------------------------------------
-
+# v4.0 — Rename
 
 @chats_bp.route("/<chat_id>/rename", methods=["POST"])
 def rename_chat(chat_id: str):
@@ -214,11 +198,7 @@ def rename_chat(chat_id: str):
     except RuntimeError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
-
-# ---------------------------------------------------------------------------
-# v4.0: Restore (bump to top)
-# ---------------------------------------------------------------------------
-
+# v4.0 — Restore (bump to top)
 
 @chats_bp.route("/<chat_id>/restore", methods=["POST"])
 def restore_chat(chat_id: str):
@@ -239,11 +219,7 @@ def restore_chat(chat_id: str):
     except RuntimeError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
-
-# ---------------------------------------------------------------------------
-# v4.0: Search
-# ---------------------------------------------------------------------------
-
+# v4.0 — Search
 
 @chats_bp.route("/search", methods=["GET"])
 def search_chats():

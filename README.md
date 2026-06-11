@@ -18,7 +18,7 @@ A Secure Intelligent AI Assistant with Chat History & Vector Memory.
 | **Search Chats** | Full-text search across all chat titles and messages |
 | **Rename Chats** | Inline rename any chat session |
 | **Restore on Load** | Automatically restores your most recent chat on page load |
-| **No Jupyter Notebooks** | All AI modes use API-based models - no manual training needed |
+| **No Jupyter Notebooks** | All AI modes use API-based models — no manual training needed |
 
 ## File Changes
 

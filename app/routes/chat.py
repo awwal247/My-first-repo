@@ -2,14 +2,14 @@
 app/routes/chat.py
 ==================
 Chat API and file-download routes:
-  POST /chat                    — send a message (text or multi-file upload)
-  POST /clear                   — wipe conversation memory for the current mode
-  POST /upload-code             — upload a zip/rar, get AI-modified code back
-  POST /regenerate              — regenerate the last assistant response
-  GET  /download/<filename>     — download a generated PPTX
-  GET  /download-zip/<filename> — download a generated code ZIP
-  GET  /history                 — fetch recent conversation history (DB direct)
-  GET  /memory-sidebar          — memory for all modes (DB direct)
+  POST /chat — send a message (text or multi-file upload)
+  POST /clear — wipe conversation memory for the current mode
+  POST /upload-code — upload a zip/rar, get AI-modified code back
+  POST /regenerate — regenerate the last assistant response
+  GET /download/<filename> — download a generated PPTX
+  GET /download-zip/<filename> — download a generated code ZIP
+  GET /history — fetch recent conversation history (DB direct)
+  GET /memory-sidebar — memory for all modes (DB direct)
 
 v4.0 changes:
   - Multi-image upload support (multiple files in one request)
@@ -68,16 +68,13 @@ _FILE_GEN_KEYWORDS: list[str] = [
     "generate a project", "make a project", "build a project",
 ]
 
-
 def _user_wants_file(message: str) -> bool:
     msg_lower = message.lower()
     return any(kw in msg_lower for kw in _FILE_GEN_KEYWORDS)
 
-
 # ---------------------------------------------------------------------------
 # PPTX generation helpers — v4.0 with Pollinations.ai images
 # ---------------------------------------------------------------------------
-
 
 def _generate_pollinations_image(prompt: str, slide_index: int, timestamp: int) -> str | None:
     """
@@ -97,7 +94,6 @@ def _generate_pollinations_image(prompt: str, slide_index: int, timestamp: int) 
     except Exception as exc:
         print(f"[Pollinations error] slide {slide_index}: {exc}")
         return None
-
 
 def _generate_pptx(ai_response: str, mode: dict | None = None) -> dict | None:
     """
@@ -181,11 +177,9 @@ def _generate_pptx(ai_response: str, mode: dict | None = None) -> dict | None:
         "slides": slide_titles,
     }
 
-
 # ---------------------------------------------------------------------------
 # Multi-file upload processor — v4.0
 # ---------------------------------------------------------------------------
-
 
 def _process_uploads(files: list) -> tuple[str, list[dict]]:
     """
@@ -211,11 +205,9 @@ def _process_uploads(files: list) -> tuple[str, list[dict]]:
             )
     return "\n".join(contexts), visions
 
-
 # ===========================================================================
 # Routes
 # ===========================================================================
-
 
 @chat_bp.route("/chat", methods=["POST"])
 def chat():
@@ -359,7 +351,6 @@ def chat():
     update_user_memory(memory_key, "assistant", answer)
     return jsonify({"ok": True, "response": answer})
 
-
 @chat_bp.route("/regenerate", methods=["POST"])
 def regenerate():
     """
@@ -455,7 +446,6 @@ def regenerate():
 
     return jsonify({"ok": True, "response": answer})
 
-
 @chat_bp.route("/clear", methods=["POST"])
 def clear():
     if "user_id" not in session:
@@ -471,7 +461,6 @@ def clear():
         return jsonify({"ok": False, "error": f"Could not clear memory: {exc}"}), 500
 
     return jsonify({"ok": True, "message": "Memory cleared for this mode."})
-
 
 @chat_bp.route("/upload-code", methods=["POST"])
 def upload_code():
@@ -533,7 +522,6 @@ def upload_code():
     update_user_memory(memory_key, "assistant", answer)
     return jsonify(response_data)
 
-
 @chat_bp.route("/download/<filename>")
 def download_file(filename: str):
     if "user_id" not in session:
@@ -545,7 +533,6 @@ def download_file(filename: str):
         return "File not found or expired", 404
     return send_from_directory("/tmp", filename, as_attachment=True)
 
-
 @chat_bp.route("/download-zip/<filename>")
 def download_zip(filename: str):
     if "user_id" not in session:
@@ -556,7 +543,6 @@ def download_zip(filename: str):
     if not os.path.exists(filepath):
         return "File not found or expired", 404
     return send_from_directory("/tmp", filename, as_attachment=True)
-
 
 @chat_bp.route("/history")
 def history():
@@ -573,7 +559,6 @@ def history():
         return jsonify({"ok": False, "error": f"Could not load history: {exc}"}), 500
 
     return jsonify({"ok": True, "messages": messages})
-
 
 @chat_bp.route("/memory-sidebar")
 def memory_sidebar():
@@ -608,7 +593,6 @@ def memory_sidebar():
         modes_out[mode_key] = exchanges[-20:]  # last 20 exchanges per mode
 
     return jsonify({"ok": True, "modes": modes_out, "logged_in": True})
-
 
 @chat_bp.route("/export-chat", methods=["POST"])
 def export_chat():
@@ -657,7 +641,6 @@ def export_chat():
         return jsonify({"ok": True, "url": f"/download-export/{filename}"})
 
     return jsonify({"ok": False, "error": f"Unsupported format: {fmt}"}), 400
-
 
 @chat_bp.route("/download-export/<filename>")
 def download_export(filename: str):

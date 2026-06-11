@@ -10,8 +10,8 @@ v4.0 architecture:
   4. ask_groq_vision() — Groq multimodal for image analysis
 
 Usage:
-    from app.services.ai_client import ask_ai
-    answer = ask_ai(message, vector_memory, web_context, mode_config)
+  from app.services.ai_client import ask_ai
+  answer = ask_ai(message, vector_memory, web_context, mode_config)
 """
 
 from __future__ import annotations
@@ -31,16 +31,13 @@ _cfg = Config()
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-
 def _hf_headers() -> dict[str, str]:
     """Return authorization headers for HuggingFace Inference API."""
     return {"Authorization": f"Bearer {_cfg.HF_TOKEN}", "Content-Type": "application/json"}
 
-
 def _groq_headers() -> dict[str, str]:
     """Return authorization headers for Groq API."""
     return {"Authorization": f"Bearer {_cfg.GROQ_API_KEY}", "Content-Type": "application/json"}
-
 
 def _build_messages(
     user_message: str,
@@ -68,11 +65,9 @@ def _build_messages(
     messages.append({"role": "user", "content": user_message})
     return messages
 
-
 # ---------------------------------------------------------------------------
 # HuggingFace Inference API (PRIMARY)
 # ---------------------------------------------------------------------------
-
 
 def ask_hf(
     user_message: str,
@@ -146,7 +141,6 @@ def ask_hf(
 
     raise last_err or RuntimeError("HF inference failed after all retries")
 
-
 def _format_hf_chat(messages: list[dict[str, str]]) -> str:
     """
     Convert OpenAI-style messages to a prompt string for HF chat models.
@@ -164,11 +158,9 @@ def _format_hf_chat(messages: list[dict[str, str]]) -> str:
             parts.append(f" {content} </s><s>[INST]")
     return "".join(parts)
 
-
 # ---------------------------------------------------------------------------
 # Groq API (FALLBACK)
 # ---------------------------------------------------------------------------
-
 
 def ask_groq(
     user_message: str,
@@ -178,14 +170,14 @@ def ask_groq(
     recent_history: list | None = None,
 ) -> str:
     """
-    Call Groq API.  This is the **fallback** when HF is unavailable.
+    Call Groq API. This is the **fallback** when HF is unavailable.
 
     Parameters
     ----------
-    user_message   : The user's current message.
-    vector_memory  : Relevant past memory (string).
-    web_context    : Web search results (string).
-    mode           : AI mode dict from AI_MODES.
+    user_message : The user's current message.
+    vector_memory : Relevant past memory (string).
+    web_context : Web search results (string).
+    mode : AI mode dict from AI_MODES.
     recent_history : List of {"role": ..., "content": ...} dicts.
 
     Returns
@@ -213,7 +205,6 @@ def ask_groq(
     data = resp.json()
     return data["choices"][0]["message"]["content"]
 
-
 def ask_groq_vision(
     message: str,
     b64_image: str,
@@ -227,11 +218,11 @@ def ask_groq_vision(
 
     Parameters
     ----------
-    message        : User's question about the image.
-    b64_image      : Base64-encoded image data (no data-url prefix).
-    media_type     : MIME type of the image.
-    meta           : Optional metadata string (shown in system prompt).
-    mode           : AI mode dict.
+    message : User's question about the image.
+    b64_image : Base64-encoded image data (no data-url prefix).
+    media_type : MIME type of the image.
+    meta : Optional metadata string (shown in system prompt).
+    mode : AI mode dict.
     recent_history : Recent conversation history.
 
     Returns
@@ -277,11 +268,9 @@ def ask_groq_vision(
     data = resp.json()
     return data["choices"][0]["message"]["content"]
 
-
 # ---------------------------------------------------------------------------
 # Unified entry point — HF first, Groq fallback
 # ---------------------------------------------------------------------------
-
 
 def ask_ai(
     user_message: str,
@@ -291,7 +280,7 @@ def ask_ai(
     recent_history: list | None = None,
 ) -> str:
     """
-    Unified AI call.  Tries HuggingFace first; falls back to Groq on failure.
+    Unified AI call. Tries HuggingFace first; falls back to Groq on failure.
 
     Parameters match ask_groq / ask_hf exactly.
 
@@ -314,7 +303,6 @@ def ask_ai(
         _log = logging.getLogger(__name__)
         _log.warning("HF inference failed, falling back to Groq: %s", exc)
         return ask_groq(user_message, vector_memory, web_context, mode, recent_history)
-
 
 # Keep ask_groq available as a direct import for backward compatibility
 __all__ = ["ask_ai", "ask_hf", "ask_groq", "ask_groq_vision"]

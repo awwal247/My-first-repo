@@ -8,10 +8,8 @@ access without hitting the database on every read.
 
 from flask import session
 
-
 def _make_key(memory_key: str) -> str:
     return f"_zenith_mem_{memory_key}"
-
 
 def get_user_memory(memory_key: str) -> list[dict]:
     """
@@ -20,7 +18,6 @@ def get_user_memory(memory_key: str) -> list[dict]:
     """
     key = _make_key(memory_key)
     return session.get(key, [])
-
 
 def update_user_memory(memory_key: str, role: str, content: str) -> None:
     """

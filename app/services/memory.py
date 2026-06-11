@@ -18,7 +18,6 @@ _log = logging.getLogger(__name__)
 _cfg = Config()
 TOP_K = _cfg.TOP_K_MEMORY
 
-
 def retrieve_relevant_memory(
     user_id: str,
     mode_key: str,
@@ -34,10 +33,10 @@ def retrieve_relevant_memory(
 
     Parameters
     ----------
-    user_id  : UUID string of the current user (from session["user_id"]).
+    user_id : UUID string of the current user (from session["user_id"]).
     mode_key : AI mode key, e.g. "researcher".
-    query    : The current user message to compare against.
-    top_k    : Maximum number of past exchanges to return.
+    query : The current user message to compare against.
+    top_k : Maximum number of past exchanges to return.
 
     Returns
     -------
@@ -101,7 +100,6 @@ def retrieve_relevant_memory(
         )
     return "\n".join(lines)
 
-
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -116,7 +114,6 @@ def _build_pairs(history: list[dict]) -> list[tuple[str, str]]:
                 reply = history[i + 1]["content"]
             pairs.append((msg["content"], reply))
     return pairs
-
 
 def _format_pairs(pairs: list[tuple[str, str]]) -> str:
     """Format pairs as a human-readable string."""

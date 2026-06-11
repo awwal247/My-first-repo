@@ -11,14 +11,13 @@ from app.config.settings import Config
 
 _cfg = Config()
 
-
 def tavily_search(query: str, max_results: int = 3) -> str:
     """
     Perform a Tavily web search and return concatenated result snippets.
 
     Parameters
     ----------
-    query       : The search query string.
+    query : The search query string.
     max_results : Maximum number of results to fetch.
 
     Returns

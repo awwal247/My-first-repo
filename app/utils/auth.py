@@ -13,11 +13,9 @@ from datetime import datetime
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-
 def valid_email(email: str) -> bool:
     """Return True if email matches a basic e-mail pattern."""
     return bool(_EMAIL_RE.match(email or ""))
-
 
 def find_user_by_email(email: str) -> tuple[str | None, dict | None]:
     """
@@ -36,7 +34,6 @@ def find_user_by_email(email: str) -> tuple[str | None, dict | None]:
         return None, None
     return str(user["id"]), user
 
-
 def find_user_by_google_id(gid: str) -> tuple[str | None, dict | None]:
     """
     Search the database for a user with a matching Google OAuth sub.
@@ -53,11 +50,9 @@ def find_user_by_google_id(gid: str) -> tuple[str | None, dict | None]:
         return None, None
     return str(user["id"]), user
 
-
 def display_name_from_email(email: str) -> str:
     """Derive a friendly display name from an e-mail local part."""
     return (email or "").split("@")[0] or "friend"
-
 
 def time_based_greeting(name: str) -> str:
     """

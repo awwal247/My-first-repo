@@ -52,10 +52,10 @@ def create_app(config: Config | None = None) -> Flask:
     from app.routes.main import main_bp
     from app.routes.landing import landing_bp
 
-    app.register_blueprint(landing_bp)   # handles /  (public)
+    app.register_blueprint(landing_bp)  # handles / (public)
     app.register_blueprint(auth_bp)
     app.register_blueprint(chat_bp)
-    app.register_blueprint(chats_bp)     # v4.0 — chat session management
+    app.register_blueprint(chats_bp)  # v4.0 — chat session management
     app.register_blueprint(main_bp)
 
     app.extensions["google_oauth"] = google
