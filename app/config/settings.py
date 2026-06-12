@@ -4,9 +4,10 @@ app/config/settings.py
 Centralised configuration. All environment variables and
 application-level constants live here — nowhere else.
 
-v4.0 changes:
-  - Added HF_TOKEN for HuggingFace Inference API
-  - Added POLLINATIONS_BASE for PPTX image generation
+OpenRouter version changes:
+  - Replaced HF_TOKEN with OPENROUTER_API_KEY
+  - Added OPENROUTER_BASE_URL for OpenRouter API
+  - Groq remains for vision fallback only
 """
 
 import os
@@ -24,16 +25,14 @@ class Config:
     SECRET_KEY: str = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
     DEBUG: bool = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
-    # AI / Groq (fallback)
+    # AI / Groq (vision fallback only)
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
 
-    # HuggingFace (primary — v4.0)
-    HF_TOKEN: str = os.getenv("HF_TOKEN", "")
-    HF_API_URL: str = "https://api-inference.huggingface.co/models"
-    # Default inference parameters
-    HF_MAX_RETRIES: int = 3
-    HF_TIMEOUT: int = 30  # seconds
+    # OpenRouter (primary — OpenRouter version)
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    OPENROUTER_TIMEOUT: int = 60  # seconds
 
     # Pollinations.ai — free image generation for PPTX slides
     POLLINATIONS_BASE: str = "https://image.pollinations.ai/prompt"

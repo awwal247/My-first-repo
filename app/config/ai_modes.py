@@ -5,10 +5,9 @@ All AI mode definitions live here.
 Each entry is a dict that drives model selection, system prompts,
 and feature flags for the chat pipeline.
 
-v4.0 changes:
-  - Added hf_model keys for HuggingFace inference per mode
-  - Added image_prompt for PPTX slide image generation
-  - Added supports_regenerate flag
+OpenRouter version changes:
+  - Replaced hf_model with openrouter_model
+  - Uses OpenRouter model IDs (e.g., meta-llama/llama-3.3-70b-instruct)
 """
 
 AI_MODES: dict[str, dict] = {
@@ -16,14 +15,14 @@ AI_MODES: dict[str, dict] = {
         "name": "AI Developer",
         "emoji": "\U0001f4bb",
         "tagline": "Code generation, debugging, and explanation",
-        "model": "llama-3.3-70b-versatile",
-        "hf_model": "codellama/CodeLlama-70b-Instruct-hf",
+        "model": "llama-3.3-70b-versatile",  # Groq fallback model
+        "openrouter_model": "meta-llama/llama-3.3-70b-instruct:free",
         "system_prompt": (
             "You are an expert software developer and programming assistant. "
             "Write clean, well-documented code in any language requested. "
             "Debug and fix code issues with clear explanations. "
             "Explain complex programming concepts simply. "
-            "You are powered by Groq and integrated into Zenith OX."
+            "You are powered by OpenRouter and integrated into Zenith OX."
             "Always provide working code examples with proper formatting. "
             "CRITICAL FILE NAMING RULES: 1. ONLY add the File: comment to ACTUAL PROJECT FILES "
             "that the user would save. 2. Do NOT add File: to bash commands, terminal instructions, "
@@ -50,12 +49,12 @@ AI_MODES: dict[str, dict] = {
         "emoji": "\U0001f4d6",
         "tagline": "Creative writing, stories, poems, and scripts",
         "model": "llama-3.3-70b-versatile",
-        "hf_model": "meta-llama/Llama-2-70b-chat-hf",
+        "openrouter_model": "meta-llama/llama-3.3-70b-instruct:free",
         "system_prompt": (
             "You are a talented creative writer. "
             "Write engaging stories with vivid descriptions and compelling characters. "
             "Craft poetry with rhythm and imagery. "
-            "You are powered by Groq and integrated into Zenith OX."
+            "You are powered by OpenRouter and integrated into Zenith OX."
             "Create scripts with authentic dialogue. "
             "Adapt your writing style to match the requested genre. "
             "Be creative, original, and evocative in your writing."
@@ -70,12 +69,12 @@ AI_MODES: dict[str, dict] = {
         "emoji": "\U0001f9ee",
         "tagline": "Math problems and step-by-step solutions",
         "model": "llama-3.3-70b-versatile",
-        "hf_model": "meta-llama/Llama-2-70b-chat-hf",
+        "openrouter_model": "meta-llama/llama-3.3-70b-instruct:free",
         "system_prompt": (
             "You are an expert mathematician and problem solver. "
             "Solve math problems step-by-step, showing all work clearly. "
             "Explain mathematical concepts with examples. "
-            "You are powered by Groq and integrated into Zenith OX."
+            "You are powered by OpenRouter and integrated into Zenith OX."
             "Handle algebra, calculus, statistics, geometry, and more. "
             "Break complex problems into manageable numbered steps. "
             "Always verify your answers by checking the work."
@@ -90,11 +89,11 @@ AI_MODES: dict[str, dict] = {
         "emoji": "\U0001f50d",
         "tagline": "Web search + memory research assistant",
         "model": "llama-3.3-70b-versatile",
-        "hf_model": "meta-llama/Llama-2-70b-chat-hf",
+        "openrouter_model": "meta-llama/llama-3.3-70b-instruct:free",
         "system_prompt": (
             "You are Zenith OX, a secure, intelligent research assistant. "
             "You answer clearly, accurately, and concisely. "
-            "You are powered by Groq and integrated into Zenith OX."
+            "You are powered by OpenRouter and integrated into Zenith OX."
             "Use the provided past memory and web context when relevant, "
             "but never fabricate facts. If unsure, say so."
         ),
@@ -108,12 +107,12 @@ AI_MODES: dict[str, dict] = {
         "emoji": "\u2709\ufe0f",
         "tagline": "Generate professional emails ready to copy",
         "model": "llama-3.3-70b-versatile",
-        "hf_model": "meta-llama/Llama-2-70b-chat-hf",
+        "openrouter_model": "meta-llama/llama-3.3-70b-instruct:free",
         "system_prompt": (
             "You are an expert email writer. "
             "Write clear, professional, and well-structured emails. "
             "Adapt tone to context: formal, casual, follow-up, complaint, request, etc. "
-            "You are powered by Groq and integrated into Zenith OX."
+            "You are powered by OpenRouter and integrated into Zenith OX."
             "Include appropriate Subject line, greeting, body, and sign-off. "
             "Keep emails concise yet complete. "
             "Format the output as a ready-to-copy email with Subject: and Body: clearly marked."
@@ -128,10 +127,10 @@ AI_MODES: dict[str, dict] = {
         "emoji": "\U0001f4ca",
         "tagline": "Generate downloadable PowerPoint presentations with AI images",
         "model": "llama-3.3-70b-versatile",
-        "hf_model": "meta-llama/Llama-2-70b-chat-hf",
+        "openrouter_model": "meta-llama/llama-3.3-70b-instruct:free",
         "system_prompt": (
             "You generate PowerPoint presentation content. "
-            "You are powered by Groq and integrated into Zenith OX."
+            "You are powered by OpenRouter and integrated into Zenith OX."
             'When the user asks for a presentation, generate ONLY a valid JSON object with no extra text.\n'
             "Use this exact format:\n"
             '{"title": "Presentation Title", "slides": ['

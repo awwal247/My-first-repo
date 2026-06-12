@@ -1,11 +1,11 @@
 """
-ZenithOX v4.0 — Application Package
+ZenithOX v4.0 — Application Package (OpenRouter Edition)
 =====================================
 Flask application factory and package initialiser.
 
-v4.0 changes:
+OpenRouter version changes:
   - Registered chats_bp blueprint for chat session management
-  - Added HF_TOKEN config integration
+  - Added OPENROUTER_API_KEY config integration
 """
 
 from flask import Flask

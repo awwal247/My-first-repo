@@ -1556,3 +1556,30 @@ body.sidebar-open {
   font-size: 13px;
   color: #6b7280;
 }
+
+/* ══ Zenith OX v4.1 additions ════════════════════════════ */
+
+/* Message timestamp */
+.msg-time {
+  display: block;
+  font-size: 0.67rem;
+  opacity: 0.55;
+  margin-top: 5px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.03em;
+  user-select: none;
+  pointer-events: none;
+}
+.message.user .msg-time { text-align: right; }
+.message.bot  .msg-time { text-align: left;  color: var(--text-muted, #888); }
+
+/* Rate-limit error highlight */
+.message.bot.error {
+  border-left: 3px solid #ef4444;
+}
+
+/* Active chat in sidebar */
+.zh-chat-item.zh-active .zh-chat-title {
+  font-weight: 600;
+  color: var(--accent, #6366f1);
+}

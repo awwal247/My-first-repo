@@ -1,4 +1,4 @@
-# ZenithOX v4.0 — Core Dependencies
+# ZenithOX OpenRouter Version — Core Dependencies
 # ===================================
 
 flask>=3.0
@@ -22,5 +22,4 @@ Pillow
 # PostgreSQL / Supabase
 psycopg2-binary
 
-# HuggingFace Inference API (v4.0 — HF-first, Groq fallback)
-huggingface_hub>=0.24.0
+# Note: No huggingface_hub needed — uses OpenRouter instead

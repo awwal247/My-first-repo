@@ -41,6 +41,7 @@ from pptx.util import Inches, Pt  # noqa: F401
 from app.config.ai_modes import AI_MODES
 from app.config.settings import Config
 from app.services.ai_client import ask_ai, ask_groq_vision
+from app.services.db import db_save_message as _db_save
 from app.services.memory import retrieve_relevant_memory
 from app.services.search import tavily_search
 from app.services.storage import get_user_memory, update_user_memory
@@ -305,9 +306,11 @@ def chat():
     web_ctx = tavily_search(message) if mode.get("uses_web_search") and message else ""
 
     try:
-        # v4.0: Use ask_ai() for HF-first, Groq-fallback routing
         answer = ask_ai(full_message, vector_mem, web_ctx, mode, recent_history=recent_history)
     except Exception as exc:
+        _s = str(exc)
+        if "429" in _s or "rate" in _s.lower() or "quota" in _s.lower():
+            return jsonify({"ok": False, "error": "⚡ Rate limited by AI provider. Please wait a moment and try again."}), 429
         return jsonify({"ok": False, "error": f"AI error: {exc}"}), 500
 
     # PPTX special handler — v4.0 with images
@@ -323,6 +326,11 @@ def chat():
             )
             update_user_memory(memory_key, "user", message)
             update_user_memory(memory_key, "assistant", summary)
+            try:
+                _db_save(user_id, mode_key, "user", message)
+                _db_save(user_id, mode_key, "assistant", summary)
+            except Exception:
+                pass
             return jsonify({
                 "ok": True,
                 "response": summary,
@@ -338,6 +346,11 @@ def chat():
             if zip_info:
                 update_user_memory(memory_key, "user", message)
                 update_user_memory(memory_key, "assistant", answer)
+                try:
+                    _db_save(user_id, mode_key, "user", message)
+                    _db_save(user_id, mode_key, "assistant", answer)
+                except Exception:
+                    pass
                 return jsonify({
                     "ok": True,
                     "response": answer,
@@ -349,6 +362,12 @@ def chat():
     user_content = message or f"[Uploaded: {', '.join(f.filename for f in uploaded_files if f)}]"
     update_user_memory(memory_key, "user", user_content)
     update_user_memory(memory_key, "assistant", answer)
+    # Persist to conversations table for cross-session vector memory
+    try:
+        _db_save(user_id, mode_key, "user", user_content)
+        _db_save(user_id, mode_key, "assistant", answer)
+    except Exception:
+        pass
     return jsonify({"ok": True, "response": answer})
 
 @chat_bp.route("/regenerate", methods=["POST"])
@@ -408,10 +427,17 @@ def regenerate():
         regen_mode["temperature"] = min(regen_mode.get("temperature", 0.7) + 0.1, 1.0)
         answer = ask_ai(clean_msg, vector_mem, web_ctx, regen_mode, recent_history=trimmed_history)
     except Exception as exc:
+        _s = str(exc)
+        if "429" in _s or "rate" in _s.lower():
+            return jsonify({"ok": False, "error": "⚡ Rate limited. Please wait a moment and try again."}), 429
         return jsonify({"ok": False, "error": f"Regeneration error: {exc}"}), 500
 
     # Update memory with the new response (replace last assistant entry)
     update_user_memory(memory_key, "assistant", answer)
+    try:
+        _db_save(user_id, mode_key, "assistant", answer)
+    except Exception:
+        pass
 
     # PPTX special handler on regenerate
     if mode.get("special_handler") == "pptx":

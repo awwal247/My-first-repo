@@ -1,12 +1,12 @@
 """
 app/services/ai_client.py
 =========================
-Unified AI client with HuggingFace-first routing and Groq fallback.
+Unified AI client with OpenRouter-first routing and Groq fallback.
 
-v4.0 architecture:
-  1. ask_ai() — main entry point; tries HF first, falls back to Groq
-  2. ask_hf() — HuggingFace Inference API (primary)
-  3. ask_groq() — Groq API (fallback when HF fails / unavailable)
+OpenRouter version architecture:
+  1. ask_ai() — main entry point; tries OpenRouter first, falls back to Groq
+  2. ask_openrouter() — OpenRouter API (primary)
+  3. ask_groq() — Groq API (fallback when OpenRouter fails / unavailable)
   4. ask_groq_vision() — Groq multimodal for image analysis
 
 Usage:
@@ -31,9 +31,14 @@ _cfg = Config()
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _hf_headers() -> dict[str, str]:
-    """Return authorization headers for HuggingFace Inference API."""
-    return {"Authorization": f"Bearer {_cfg.HF_TOKEN}", "Content-Type": "application/json"}
+def _or_headers() -> dict[str, str]:
+    """Return authorization headers for OpenRouter API."""
+    return {
+        "Authorization": f"Bearer {_cfg.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://zenith-ox.vercel.app",  # Required by OpenRouter
+        "X-Title": "Zenith OX",
+    }
 
 def _groq_headers() -> dict[str, str]:
     """Return authorization headers for Groq API."""
@@ -46,7 +51,7 @@ def _build_messages(
     web_context: str = "",
     recent_history: list | None = None,
 ) -> list[dict[str, str]]:
-    """Build the OpenAI-compatible messages list for both HF and Groq."""
+    """Build the OpenAI-compatible messages list for both OpenRouter and Groq."""
     sys_parts = [mode.get("system_prompt", "You are a helpful assistant.")]
     if vector_memory:
         sys_parts.append(f"\n\nRelevant past memory:\n{vector_memory}")
@@ -66,10 +71,10 @@ def _build_messages(
     return messages
 
 # ---------------------------------------------------------------------------
-# HuggingFace Inference API (PRIMARY)
+# OpenRouter API (PRIMARY)
 # ---------------------------------------------------------------------------
 
-def ask_hf(
+def ask_openrouter(
     user_message: str,
     mode: dict,
     vector_memory: str = "",
@@ -77,86 +82,41 @@ def ask_hf(
     recent_history: list | None = None,
 ) -> str:
     """
-    Call HuggingFace Inference API.
+    Call OpenRouter API (OpenAI-compatible).
 
-    Uses the mode-specific hf_model if configured, otherwise falls
+    Uses the mode-specific openrouter_model if configured, otherwise falls
     back to a general-purpose model.
 
     Raises RuntimeError on failure so the caller can retry with Groq.
     """
-    hf_model = mode.get("hf_model", "meta-llama/Llama-2-70b-chat-hf")
-    url = f"{_cfg.HF_API_URL}/{hf_model}"
+    or_model = mode.get("openrouter_model", "meta-llama/llama-3.3-70b-instruct:free")
+    url = f"{_cfg.OPENROUTER_BASE_URL}/chat/completions"
 
     messages = _build_messages(user_message, mode, vector_memory, web_context, recent_history)
 
     payload: dict[str, Any] = {
-        "inputs": _format_hf_chat(messages),
-        "parameters": {
-            "temperature": mode.get("temperature", 0.7),
-            "max_new_tokens": mode.get("max_tokens", 2000),
-            "return_full_text": False,
-            "do_sample": True,
-        },
-        "options": {"wait_for_model": True, "use_cache": True},
+        "model": or_model,
+        "messages": messages,
+        "temperature": mode.get("temperature", 0.7),
+        "max_tokens": mode.get("max_tokens", 2000),
     }
 
-    last_err: Exception | None = None
-    for attempt in range(1, _cfg.HF_MAX_RETRIES + 1):
-        try:
-            resp = requests.post(
-                url,
-                headers=_hf_headers(),
-                json=payload,
-                timeout=_cfg.HF_TIMEOUT,
-            )
-            # HF sometimes returns 503 while loading — retry
-            if resp.status_code in (503, 504):
-                time.sleep(2 * attempt)
-                continue
-            resp.raise_for_status()
-            data = resp.json()
-            # HF inference format: [{"generated_text": "..."}]
-            if isinstance(data, list) and data:
-                generated = data[0].get("generated_text", "")
-                # Strip the echo'd prompt if present
-                prompt_text = messages[-1]["content"]
-                if generated.startswith(prompt_text):
-                    generated = generated[len(prompt_text):].strip()
-                return generated or data[0].get("text", "")
-            elif isinstance(data, dict):
-                return data.get("generated_text", data.get("text", ""))
-            return str(data)
-        except requests.exceptions.Timeout:
-            last_err = RuntimeError(f"HF timeout (attempt {attempt})")
-            time.sleep(1)
-        except requests.exceptions.HTTPError as exc:
-            last_err = RuntimeError(f"HF HTTP error: {exc.response.status_code} — {exc.response.text[:200]}")
-            if exc.response.status_code in (503, 504, 429):
-                time.sleep(2 * attempt)
-                continue
-            raise last_err
-        except Exception as exc:
-            last_err = RuntimeError(f"HF error: {exc}")
-            time.sleep(1)
-
-    raise last_err or RuntimeError("HF inference failed after all retries")
-
-def _format_hf_chat(messages: list[dict[str, str]]) -> str:
-    """
-    Convert OpenAI-style messages to a prompt string for HF chat models.
-    Uses Llama-2 chat format by default.
-    """
-    parts: list[str] = []
-    for m in messages:
-        role = m["role"]
-        content = m["content"]
-        if role == "system":
-            parts.append(f"[INST] <<SYS>>\n{content}\n<</SYS>>\n\n")
-        elif role == "user":
-            parts.append(f"{content} [/INST]")
-        elif role == "assistant":
-            parts.append(f" {content} </s><s>[INST]")
-    return "".join(parts)
+    try:
+        resp = requests.post(
+            url,
+            headers=_or_headers(),
+            json=payload,
+            timeout=_cfg.OPENROUTER_TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]
+    except requests.exceptions.Timeout:
+        raise RuntimeError("OpenRouter timeout")
+    except requests.exceptions.HTTPError as exc:
+        raise RuntimeError(f"OpenRouter HTTP error: {exc.response.status_code} — {exc.response.text[:200]}")
+    except Exception as exc:
+        raise RuntimeError(f"OpenRouter error: {exc}")
 
 # ---------------------------------------------------------------------------
 # Groq API (FALLBACK)
@@ -170,7 +130,7 @@ def ask_groq(
     recent_history: list | None = None,
 ) -> str:
     """
-    Call Groq API. This is the **fallback** when HF is unavailable.
+    Call Groq API. This is the **fallback** when OpenRouter is unavailable.
 
     Parameters
     ----------
@@ -269,7 +229,7 @@ def ask_groq_vision(
     return data["choices"][0]["message"]["content"]
 
 # ---------------------------------------------------------------------------
-# Unified entry point — HF first, Groq fallback
+# Unified entry point — OpenRouter first, Groq fallback
 # ---------------------------------------------------------------------------
 
 def ask_ai(
@@ -280,9 +240,9 @@ def ask_ai(
     recent_history: list | None = None,
 ) -> str:
     """
-    Unified AI call. Tries HuggingFace first; falls back to Groq on failure.
+    Unified AI call. Tries OpenRouter first; falls back to Groq on failure.
 
-    Parameters match ask_groq / ask_hf exactly.
+    Parameters match ask_groq / ask_openrouter exactly.
 
     Returns
     -------
@@ -290,19 +250,19 @@ def ask_ai(
     """
     mode = mode or {}
 
-    # If no HF token is configured, skip directly to Groq
-    if not _cfg.HF_TOKEN:
+    # If no OpenRouter key is configured, skip directly to Groq
+    if not _cfg.OPENROUTER_API_KEY:
         return ask_groq(user_message, vector_memory, web_context, mode, recent_history)
 
-    # Try HuggingFace first
+    # Try OpenRouter first
     try:
-        return ask_hf(user_message, mode, vector_memory, web_context, recent_history)
+        return ask_openrouter(user_message, mode, vector_memory, web_context, recent_history)
     except Exception as exc:
-        # Log the HF failure and fall back to Groq
+        # Log the OpenRouter failure and fall back to Groq
         import logging
         _log = logging.getLogger(__name__)
-        _log.warning("HF inference failed, falling back to Groq: %s", exc)
+        _log.warning("OpenRouter inference failed, falling back to Groq: %s", exc)
         return ask_groq(user_message, vector_memory, web_context, mode, recent_history)
 
 # Keep ask_groq available as a direct import for backward compatibility
-__all__ = ["ask_ai", "ask_hf", "ask_groq", "ask_groq_vision"]
+__all__ = ["ask_ai", "ask_openrouter", "ask_groq", "ask_groq_vision"]
