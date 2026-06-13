@@ -1,9 +1,9 @@
-# ZENITH OX v4.0 — OpenRouter Edition
+# ZENITH OX v2.0 — OpenRouter Edition
 
 A Secure Intelligent AI Assistant with Chat History & Vector Memory.
 Powered by **OpenRouter** (primary) with **Groq** fallback for vision.
 
-## What's New in v4.0 OpenRouter Edition
+## What's New in v2.0 OpenRouter Edition
 
 | Feature | Description |
 |---------|-------------|
