@@ -11,7 +11,6 @@
   const clearBtn = document.getElementById("clearBtn");
   const logoutBtn = document.getElementById("logoutBtn");
   const micBtn = document.getElementById("micBtn");
-  const darkModeBtn = document.getElementById("darkModeBtn");
   const exportBtn = document.getElementById("exportBtn");
   const exportDropdown = document.getElementById("exportDropdown");
   const regenerateBtn = document.getElementById("regenerateBtn");
@@ -19,14 +18,11 @@
   const fileBtn = document.getElementById("fileBtn");
   const filePreview = document.getElementById("file-preview");
   const fileCount = document.getElementById("fileCount");
-  const moonIcon = document.getElementById("moonIcon");
-  const sunIcon = document.getElementById("sunIcon");
-  const hljsTheme = document.getElementById("hljs-theme");
   const toastContainer = document.getElementById("toastContainer");
 
   /* -- marked.js config -- */
   const renderer = new marked.Renderer();
-  const FILE_RE = new RegExp("^(?:#|//|/\s*\*/)?\s*File:\s*(.+)$", "i");
+  const FILE_RE = new RegExp("^(?:#|//|/\\s*\\*\\*|<!--)?\\s*File:\\s*(.+?)\\s*(?:\\*/|-->)?$", "i");
 
   renderer.code = function({ text, lang }) {
     const code=text||"", language=lang||"plaintext";
@@ -81,7 +77,7 @@
   }
 
   /* -- helpers -- */
-  function esc(s){return(s||"").replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");}
+  function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
   function addMessage(text,cls){
     const d=document.createElement("div");d.className="message "+(cls||"bot");
@@ -195,7 +191,11 @@
       }
     }catch(e){}
   }
-  loadHistory();
+  // v4.0: ChatHistory (chat_history_redesign.js) is the canonical source for
+  // restoring the chat box on load via /api/chats (restoreRecent). Only fall
+  // back to the legacy /history endpoint if that script failed to load —
+  // otherwise both loaders would populate chat-box at once and duplicate messages.
+  if(typeof ChatHistory==="undefined")loadHistory();
 
   /* -- Send message -- */
   async function sendMessage(message){
@@ -252,33 +252,11 @@
       const data=await r.json();typingEl.remove();
       if(!data.ok){addMessage("⚠ "+(data.error||"Regeneration failed"),"bot error");return;}
       typewriterRender(data.response);
-      if(typeof ChatHistory!=="undefined")ChatHistory.appendMessage("assistant",data.response);
+      if(typeof ChatHistory!=="undefined")ChatHistory.replaceLastAssistant(data.response);
     }catch(err){typingEl.remove();addMessage("⚠ Regeneration error: "+err.message,"bot error");}
     finally{if(regenerateBtn)regenerateBtn.disabled=false;}
   }
   regenerateBtn&&regenerateBtn.addEventListener("click",doRegenerate);
-
-  /* -- Dark mode toggle -- */
-  const THEME_KEY="zenith_dark_mode";
-  function loadTheme(){
-    const saved=localStorage.getItem(THEME_KEY);
-    const prefersDark=window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const isDark=saved!==null?saved==="true":prefersDark;
-    setTheme(isDark);
-  }
-  function setTheme(isDark){
-    document.documentElement.setAttribute("data-theme",isDark?"dark":"light");
-    if(hljsTheme)hljsTheme.href=isDark
-      ?"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
-      :"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
-    if(moonIcon&&sunIcon){moonIcon.style.display=isDark?"none":"block";sunIcon.style.display=isDark?"block":"none";}
-    localStorage.setItem(THEME_KEY,isDark?"true":"false");
-  }
-  darkModeBtn&&darkModeBtn.addEventListener("click",()=>{
-    const current=document.documentElement.getAttribute("data-theme")==="dark";
-    setTheme(!current);
-  });
-  loadTheme();
 
   /* -- Voice input (Web Speech API) -- */
   let recognition=null;
@@ -415,7 +393,7 @@
     }catch(e){console.warn("Memory sidebar:",e);}
   }
 
-  function esc(s){return(s||"").replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");}
+  function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
   window.addEventListener("zenith:message-sent",()=>{
     loaded=false;
@@ -435,4 +413,80 @@
   function closeSidebar(){sidebar.classList.remove("zh-open");toggle.setAttribute("aria-expanded","false");backdrop.style.display="none";}
   toggle.addEventListener("click",()=>sidebar.classList.contains("zh-open")?closeSidebar():openSidebar());
   backdrop.addEventListener("click",closeSidebar);
+})();
+
+/* ==========================================================
+   SCROLL-TO-BOTTOM BUTTON
+   Shows a floating button whenever the user has scrolled away
+   from the latest message; clicking it jumps back to the bottom.
+   ========================================================== */
+(()=>{
+  const chatBox=document.getElementById("chat-box");
+  const btn=document.getElementById("scrollToBottomBtn");
+  if(!chatBox||!btn)return;
+
+  const THRESHOLD=80; // px from bottom before we consider it "not at bottom"
+
+  function isNearBottom(){
+    return chatBox.scrollHeight-chatBox.scrollTop-chatBox.clientHeight<THRESHOLD;
+  }
+
+  function update(){
+    if(isNearBottom())btn.classList.add("hidden");
+    else btn.classList.remove("hidden");
+  }
+
+  chatBox.addEventListener("scroll",update);
+  btn.addEventListener("click",()=>{
+    chatBox.scrollTo({top:chatBox.scrollHeight,behavior:"smooth"});
+  });
+
+  // Re-check whenever new content streams in (typewriter, history load, etc.)
+  const observer=new MutationObserver(()=>{
+    // Only auto-hide if the user is already at the bottom; don't yank
+    // the button away while they're deliberately reading scrollback.
+    if(isNearBottom())btn.classList.add("hidden");
+  });
+  observer.observe(chatBox,{childList:true,subtree:true,characterData:true});
+
+  update();
+})();
+
+/* ==========================================================
+   KEYBOARD SHORTCUTS
+   - Esc: close memory sidebar, mobile chat list, export dropdown
+   - Ctrl/Cmd+K: focus the chat-history search box
+   ========================================================== */
+(()=>{
+  document.addEventListener("keydown",(e)=>{
+    const isMeta=e.ctrlKey||e.metaKey;
+
+    if(isMeta&&e.key.toLowerCase()==="k"){
+      const search=document.getElementById("zh-search-input");
+      if(search){e.preventDefault();search.focus();search.select();}
+      return;
+    }
+
+    if(e.key==="Escape"){
+      const memorySidebar=document.getElementById("memorySidebar");
+      const sidebarOverlay=document.getElementById("sidebarOverlay");
+      if(memorySidebar&&memorySidebar.classList.contains("open")){
+        memorySidebar.classList.remove("open");
+        sidebarOverlay&&sidebarOverlay.classList.remove("active");
+        document.body.classList.remove("sidebar-open");
+      }
+
+      const exportDropdown=document.getElementById("exportDropdown");
+      if(exportDropdown)exportDropdown.classList.remove("show");
+
+      const zhSidebar=document.getElementById("zh-sidebar");
+      const zhBackdrop=document.getElementById("zh-backdrop");
+      const zhToggle=document.getElementById("zh-sidebar-toggle");
+      if(zhSidebar&&zhSidebar.classList.contains("zh-open")){
+        zhSidebar.classList.remove("zh-open");
+        zhBackdrop&&(zhBackdrop.style.display="none");
+        zhToggle&&zhToggle.setAttribute("aria-expanded","false");
+      }
+    }
+  });
 })();

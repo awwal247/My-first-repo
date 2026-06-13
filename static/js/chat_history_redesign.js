@@ -7,6 +7,12 @@ const ChatHistory = (() => {
   const searchInput = document.getElementById("zh-search-input");
   let chats = [];
   let currentChatId = null;
+  let currentMessages = [];
+
+  // Snapshot the original "welcome" card markup so we can restore it
+  // for brand-new / empty chats without having to hardcode it here.
+  const _welcomeBox = document.getElementById("chat-box");
+  const _welcomeHTML = _welcomeBox ? _welcomeBox.innerHTML : "";
 
   async function loadChats() {
     try {
@@ -87,7 +93,7 @@ const ChatHistory = (() => {
   }
 
   function esc(s) {
-    return (s || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+    return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
   async function loadChat(chatId) {
@@ -97,13 +103,17 @@ const ChatHistory = (() => {
       if (!data.ok) return;
       currentChatId = chatId;
       const chat = data.chat;
-      if (chat && chat.messages) {
-        const box = document.getElementById("chat-box");
-        if (box) {
+      currentMessages = (chat && Array.isArray(chat.messages)) ? chat.messages.slice() : [];
+      const box = document.getElementById("chat-box");
+      if (box) {
+        if (currentMessages.length > 0) {
           box.innerHTML = "";
-          chat.messages.forEach(msg => {
+          currentMessages.forEach(msg => {
             if (window.appendChatMessage) window.appendChatMessage(msg.role, msg.content);
           });
+        } else {
+          // Nothing in this chat yet — show the welcome card instead of a blank pane.
+          box.innerHTML = _welcomeHTML;
         }
       }
       renderChats(searchInput ? searchInput.value : "");
@@ -160,7 +170,12 @@ const ChatHistory = (() => {
       const r = await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
       const data = await r.json();
       if (data.ok) {
-        if (currentChatId === chatId) currentChatId = null;
+        if (currentChatId === chatId) {
+          currentChatId = null;
+          currentMessages = [];
+          const box = document.getElementById("chat-box");
+          if (box) box.innerHTML = _welcomeHTML;
+        }
         loadChats();
       }
     } catch (e) {
@@ -178,8 +193,9 @@ const ChatHistory = (() => {
       const data = await r.json();
       if (data.ok && data.chat_id) {
         currentChatId = data.chat_id;
+        currentMessages = [];
         const box = document.getElementById("chat-box");
-        if (box) box.innerHTML = "";
+        if (box) box.innerHTML = _welcomeHTML;
         loadChats();
       }
     } catch (e) {
@@ -187,6 +203,82 @@ const ChatHistory = (() => {
     }
   }
 
+  // ------------------------------------------------------------------
+  // Message persistence — keeps the active chat's `messages` array
+  // (and auto-generated title) in sync with the backend so the
+  // sidebar history / "Restore on Load" feature actually works.
+  // ------------------------------------------------------------------
+
+  function _autoTitle(text) {
+    const clean = (text || "").replace(/\s+/g, " ").trim();
+    if (!clean) return "New chat";
+    return clean.length > 60 ? clean.slice(0, 60).trim() + "…" : clean;
+  }
+
+  async function _ensureChat() {
+    if (currentChatId) return currentChatId;
+    try {
+      const r = await fetch("/api/chats/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "New chat", mode: window.ZENITH_MODE || "researcher", messages: [] })
+      });
+      const data = await r.json();
+      if (data.ok && data.chat_id) {
+        currentChatId = data.chat_id;
+        currentMessages = [];
+      }
+    } catch (e) {
+      console.warn("ensureChat:", e);
+    }
+    return currentChatId;
+  }
+
+  async function _persist(title) {
+    if (!currentChatId) return;
+    try {
+      const payload = { messages: currentMessages };
+      if (title) payload.title = title;
+      await fetch(`/api/chats/${currentChatId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      loadChats();
+    } catch (e) {
+      console.warn("persist chat:", e);
+    }
+  }
+
+  async function appendMessage(role, content) {
+    await _ensureChat();
+    if (!currentChatId) return;
+
+    currentMessages.push({ role, content });
+
+    let title = null;
+    const userTurns = currentMessages.filter(m => m.role === "user").length;
+    if (role === "user" && userTurns === 1) {
+      title = _autoTitle(content);
+    }
+    await _persist(title);
+  }
+
+  async function replaceLastAssistant(content) {
+    await _ensureChat();
+    if (!currentChatId) return;
+
+    for (let i = currentMessages.length - 1; i >= 0; i--) {
+      if (currentMessages[i].role === "assistant") {
+        currentMessages[i] = { role: "assistant", content };
+        await _persist();
+        return;
+      }
+    }
+    // No prior assistant message found — just append.
+    currentMessages.push({ role: "assistant", content });
+    await _persist();
+  }
   if (searchInput) {
     searchInput.addEventListener("input", () => renderChats(searchInput.value));
   }
@@ -207,5 +299,5 @@ const ChatHistory = (() => {
   }
   restoreRecent();
 
-  return { loadChats, startNewChat, appendMessage: () => {} };
+  return { loadChats, startNewChat, appendMessage, replaceLastAssistant };
 })();

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zenith OX v4.0 — {{ mode.name }}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-theme">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -39,9 +39,6 @@
                 </div>
                 <div class="top-bar-actions">
                     <button class="icon-btn" id="micBtn" title="Voice input">🎤</button>
-                    <button class="icon-btn" id="darkModeBtn" title="Toggle dark mode">
-                        <span id="moonIcon">🌙</span><span id="sunIcon" style="display:none">☀️</span>
-                    </button>
                     <button class="icon-btn" id="memoryBtn" title="Memory sidebar">🧠</button>
                     <button class="icon-btn" id="exportBtn" title="Export chat">📥</button>
                     <div class="export-dropdown" id="exportDropdown">
@@ -64,6 +61,7 @@
                     <p>Type a message below or upload files to get started.</p>
                 </div>
             </div>
+            <button id="scrollToBottomBtn" class="scroll-to-bottom-btn hidden" title="Scroll to latest">⬇</button>
 
             <div class="input-area">
                 <div id="file-preview" class="hidden"></div>
@@ -75,7 +73,7 @@
                     <form id="chatForm">
                         <textarea id="user-input" placeholder="Type your message..." rows="1"></textarea>
                     </form>
-                    <button id="sendBtn">Send</button>
+                    <button id="sendBtn" title="Send" aria-label="Send">↑</button>
                 </div>
                 <div class="bottom-toolbar">
                     <div class="toolbar-left">

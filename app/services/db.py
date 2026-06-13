@@ -131,17 +131,13 @@ def db_get_conversation(user_id: str, mode_key: str, limit: int = 60) -> list[di
     conn = get_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # FIX: get the NEWEST limit rows, returned in chrono order
-            # (was ASC LIMIT → returned oldest N, cutting off recent context)
             cur.execute(
                 """
-                SELECT role, content, created_at FROM (
-                    SELECT role, content, created_at
-                    FROM conversations
-                    WHERE user_id = %s AND mode_key = %s
-                    ORDER BY created_at DESC
-                    LIMIT %s
-                ) sub ORDER BY created_at ASC
+                SELECT role, content, created_at
+                FROM conversations
+                WHERE user_id = %s AND mode_key = %s
+                ORDER BY created_at ASC
+                LIMIT %s
                 """,
                 (user_id, mode_key, limit),
             )
