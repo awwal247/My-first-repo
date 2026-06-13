@@ -775,14 +775,14 @@ body {
 
 /* ── Buttons ───────────────────────────────────────────────── */
 #sendBtn, .action-btn {
-  height: 40px;
-  width: 40px;
+  height: 44px;
+  width: 44px;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: var(--accent-gradient);
   color: #fff;
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition);
@@ -814,14 +814,14 @@ body {
 
 /* ── Mic button (now beside Send in the composer) ───────────── */
 #micBtn {
-  height: 40px;
-  width: 40px;
+  height: 44px;
+  width: 44px;
   padding: 0;
   border: 1px solid var(--glass-border);
   border-radius: 50%;
   background: var(--glass-bg);
   color: var(--fg);
-  font-size: 16px;
+  font-size: 19px;
   cursor: pointer;
   transition: all var(--transition);
   display: flex;
@@ -1159,9 +1159,9 @@ body.sidebar-open {
   }
 
   #sendBtn, #micBtn {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
   }
 
   .memory-sidebar {

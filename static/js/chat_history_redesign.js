@@ -286,13 +286,18 @@ const ChatHistory = (() => {
   // Load on startup
   loadChats();
 
-  // Restore most recent chat on load
+  // Restore most recent chat for THIS mode on load.
+  // (Previously this just grabbed data.chats[0] — the globally most-recent
+  // chat across ALL modes — so a chat started in Slides Generator would
+  // show up when the user opened Developer mode. Now we only restore a
+  // chat whose `mode` matches the page's current mode.)
   async function restoreRecent() {
     try {
       const r = await fetch("/api/chats");
       const data = await r.json();
       if (data.ok && data.chats && data.chats.length > 0) {
-        const recent = data.chats[0];
+        const currentMode = window.ZENITH_MODE || "researcher";
+        const recent = data.chats.find(c => c.mode === currentMode);
         if (recent) loadChat(recent.id);
       }
     } catch (e) {}
