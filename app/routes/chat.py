@@ -468,6 +468,14 @@ def upload_code():
     if "user_id" not in session:
         return jsonify({"ok": False, "error": "Not authenticated."}), 401
 
+    # Code-project ZIP/RAR upload is a Developer-mode-only feature.
+    if session.get("ai_mode") != "developer":
+        return jsonify({
+            "ok": False,
+            "error": "Code project upload is only available in Developer mode. "
+                     "Switch to Developer mode and try again.",
+        }), 403
+
     if "file" not in request.files:
         return jsonify({"ok": False, "error": "No file uploaded."}), 400
 

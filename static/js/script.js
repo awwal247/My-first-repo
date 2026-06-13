@@ -47,7 +47,17 @@
 
   /* -- textarea auto-resize -- */
   input.addEventListener("input",()=>{input.style.height="auto";input.style.height=Math.min(input.scrollHeight,150)+"px";});
-  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.dispatchEvent(new Event("submit"));}});
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit?form.requestSubmit():form.dispatchEvent(new Event("submit",{cancelable:true}));}});
+
+  /* -- Send button --
+     sendBtn lives outside <chatForm> (next to it in the input row) so it
+     has no native submit behaviour. Wire it explicitly so pressing the
+     Send button (not just the Enter key) always triggers a response. */
+  sendBtn.addEventListener("click",e=>{
+    e.preventDefault();
+    if(form.requestSubmit)form.requestSubmit();
+    else form.dispatchEvent(new Event("submit",{cancelable:true}));
+  });
 
   /* -- Multi-file upload -- */
   let pendingFiles=[];
@@ -55,8 +65,15 @@
   fileInput.addEventListener("change",()=>{
     const files=Array.from(fileInput.files);
     if(!files.length)return;
-    pendingFiles=files;
+    // v4.1: append newly-picked files to any already-pending ones so users
+    // can attach multiple files across separate "Attach files" picks,
+    // instead of the new selection wiping out the previous one.
+    files.forEach(f=>{
+      const dup=pendingFiles.some(p=>p.name===f.name&&p.size===f.size&&p.lastModified===f.lastModified);
+      if(!dup)pendingFiles.push(f);
+    });
     renderFilePreview();
+    fileInput.value="";
   });
 
   function renderFilePreview(){

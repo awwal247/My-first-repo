@@ -38,7 +38,6 @@
                     </div>
                 </div>
                 <div class="top-bar-actions">
-                    <button class="icon-btn" id="micBtn" title="Voice input">🎤</button>
                     <button class="icon-btn" id="memoryBtn" title="Memory sidebar">🧠</button>
                     <button class="icon-btn" id="exportBtn" title="Export chat">📥</button>
                     <div class="export-dropdown" id="exportDropdown">
@@ -67,12 +66,15 @@
                 <div id="file-preview" class="hidden"></div>
                 <div class="file-actions">
                     <button class="file-btn" id="fileBtn">📎 Attach files</button>
+                    {% if mode_key == 'developer' %}
                     <button class="file-btn" id="uploadCodeBtn">📦 Upload code project</button>
+                    {% endif %}
                 </div>
                 <div class="input-row">
                     <form id="chatForm">
                         <textarea id="user-input" placeholder="Type your message..." rows="1"></textarea>
                     </form>
+                    <button id="micBtn" title="Voice input" aria-label="Voice input">🎤</button>
                     <button id="sendBtn" title="Send" aria-label="Send">↑</button>
                 </div>
                 <div class="bottom-toolbar">
@@ -101,7 +103,9 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <input type="file" id="fileInput" multiple style="display:none">
+    {% if mode_key == 'developer' %}
     <input type="file" id="codeInput" accept=".zip,.rar" style="display:none">
+    {% endif %}
 
     <script>window.ZENITH_MODE = "{{ mode_key }}";</script>
     <script src="{{ url_for('static', filename='js/chat_history_redesign.js') }}"></script>

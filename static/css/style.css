@@ -812,6 +812,38 @@ body {
   cursor: not-allowed;
 }
 
+/* ── Mic button (now beside Send in the composer) ───────────── */
+#micBtn {
+  height: 40px;
+  width: 40px;
+  padding: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: var(--glass-bg);
+  color: var(--fg);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#micBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+  background: var(--glass-bg-strong);
+  transform: translateY(-1px);
+}
+
+#micBtn.active,
+#micBtn.voice-recording {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
 /* ── File upload ───────────────────────────────────────────── */
 .file-actions {
   display: flex;
@@ -1126,10 +1158,15 @@ body.sidebar-open {
     padding: 16px 12px 110px;
   }
 
-  #sendBtn {
+  #sendBtn, #micBtn {
     width: 36px;
     height: 36px;
     font-size: 16px;
+  }
+
+  .memory-sidebar {
+    width: 85vw;
+    max-width: 340px;
   }
 }
 
