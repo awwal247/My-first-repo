@@ -169,25 +169,83 @@
     });
   }
 
-  /* -- TYPEWRITER animation -- */
+  /* -- TYPEWRITER animation (legacy — used only for file-upload / Slides
+     responses, which arrive as a single complete block from /chat) -- */
   function typewriterRender(txt,dlUrl,dlName){
     const wrapper=document.createElement("div");wrapper.className="message bot";
     const content=document.createElement("div");content.className="md-content";
     wrapper.appendChild(content);chatBox.appendChild(wrapper);chatBox.scrollTop=chatBox.scrollHeight;
-    const words=txt.split(" ");let i=0;const buf=[];
-    const tick=setInterval(()=>{
-      if(i>=words.length){
-        clearInterval(tick);
-        content.innerHTML=marked.parse(txt);renderMath(content);
-        if(dlUrl){const a=document.createElement("a");a.href=dlUrl;a.download=dlName||"download";a.className="download-btn";a.textContent="📥 Download "+(dlName||"file");wrapper.appendChild(a);}
-        addCopyBtn(wrapper,txt);addMsgActions(wrapper,null,txt);chatBox.scrollTop=chatBox.scrollHeight;return;
+    content.innerHTML=marked.parse(txt);renderMath(content);
+    if(dlUrl){const a=document.createElement("a");a.href=dlUrl;a.download=dlName||"download";a.className="download-btn";a.textContent="📥 Download "+(dlName||"file");wrapper.appendChild(a);}
+    addCopyBtn(wrapper,txt);addMsgActions(wrapper,null,txt);chatBox.scrollTop=chatBox.scrollHeight;
+  }
+
+  /* -- v2.1 AI TEXT TRACKER --
+     Streams the response live via SSE (/chat/stream), rendering each
+     chunk of real model output as it arrives — replaces the old fake
+     typewriter animation with the model's actual token stream. */
+  async function streamRender(message){
+    const wrapper=document.createElement("div");wrapper.className="message bot";
+    const content=document.createElement("div");content.className="md-content";
+    wrapper.appendChild(content);chatBox.appendChild(wrapper);chatBox.scrollTop=chatBox.scrollHeight;
+
+    let full="";
+    let result={ok:true,response:"",download_url:null,download_name:null};
+
+    try{
+      const resp=await fetch("/chat/stream",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({message})
+      });
+      if(!resp.ok||!resp.body){
+        const data=await resp.json().catch(()=>({}));
+        throw new Error(data.error||("HTTP "+resp.status));
       }
-      const batch=Math.min(4,words.length-i);
-      for(let b=0;b<batch;b++)buf.push(words[i+b]);
-      i+=batch;
-      content.textContent=buf.join(" ")+"▌";
-      chatBox.scrollTop=chatBox.scrollHeight;
-    },12);
+
+      const reader=resp.body.getReader();
+      const decoder=new TextDecoder();
+      let buf="";
+
+      while(true){
+        const {done,value}=await reader.read();
+        if(done)break;
+        buf+=decoder.decode(value,{stream:true});
+        const lines=buf.split("\n\n");
+        buf=lines.pop(); // keep any incomplete chunk for next read
+        for(const line of lines){
+          if(!line.startsWith("data:"))continue;
+          let payload;
+          try{payload=JSON.parse(line.slice(5).trim());}catch(e){continue;}
+          if(payload.error){throw new Error(payload.error);}
+          if(payload.delta){
+            full+=payload.delta;
+            content.innerHTML=marked.parse(full)+'<span class="text-tracker-cursor">▌</span>';
+            chatBox.scrollTop=chatBox.scrollHeight;
+          }
+          if(payload.done){
+            result.download_url=payload.download_url||null;
+            result.download_name=payload.download_name||null;
+          }
+        }
+      }
+    }catch(err){
+      result.ok=false;result.error=err.message;
+    }
+
+    // Final render (math, copy/regenerate buttons, download link)
+    content.innerHTML=marked.parse(full);renderMath(content);
+    if(!result.ok){
+      content.innerHTML+='<div class="stream-error">⚠ '+esc(result.error||"Connection error")+'</div>';
+    }
+    if(result.download_url){
+      const a=document.createElement("a");a.href=result.download_url;a.download=result.download_name||"download";
+      a.className="download-btn";a.textContent="📥 Download "+(result.download_name||"file");wrapper.appendChild(a);
+    }
+    if(full){addCopyBtn(wrapper,full);addMsgActions(wrapper,null,full);}
+
+    result.response=full;
+    return result;
   }
 
   window.appendChatMessage=function(role,content){
@@ -218,7 +276,33 @@
   async function sendMessage(message){
     if(pendingFiles.length)pendingFiles.forEach(f=>addFileIndicator(f.name));
     if(message)addMessage(message,"user");
-    const typingEl=addTyping();sendBtn.disabled=true;
+    sendBtn.disabled=true;
+
+    // v2.1: text-only messages (no file attachments) in any mode other than
+    // Slides Generator use the live SSE "AI text tracker". File uploads and
+    // Slides Generator (which returns a JSON->PPTX summary, not raw model
+    // text) still go through the non-streaming /chat endpoint.
+    const canStream=!pendingFiles.length&&window.ZENITH_MODE!=="pptx_generator";
+
+    if(canStream){
+      try{
+        const result=await streamRender(message);
+        if(!result.ok&&!result.response){
+          // Nothing useful came back at all — error already shown inline.
+        }else if(typeof ChatHistory!=="undefined"){
+          if(message)ChatHistory.appendMessage("user",message);
+          ChatHistory.appendMessage("assistant",result.response);
+        }
+        window.dispatchEvent(new Event("zenith:message-sent"));
+      }catch(err){
+        addMessage("⚠ Connection error: "+err.message,"bot error");
+      }finally{
+        sendBtn.disabled=false;input.focus();
+      }
+      return;
+    }
+
+    const typingEl=addTyping();
     try{
       let r;
       if(pendingFiles.length){

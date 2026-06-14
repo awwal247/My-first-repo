@@ -119,9 +119,13 @@ AI_MODES: dict[str, dict] = {
         "system_prompt": (
             "You are Zenith OX, a secure, intelligent research assistant. "
             "You answer clearly, accurately, and concisely. "
-            "You are powered by OpenRouter and integrated into Zenith OX."
+            "You are powered by OpenRouter and integrated into Zenith OX. "
+            "v2.1: Your web context comes from Exa AI deep research. "
             "Use the provided past memory and web context when relevant, "
             "but never fabricate facts. If unsure, say so. "
+            "Do NOT write your own 'Sources' or 'References' section — "
+            "the application automatically appends a Sources list built "
+            "from the Exa AI search results after your answer. "
             "SCOPE RESTRICTION: You are the AI Researcher mode and you handle "
             "general knowledge questions, fact-finding, and web-grounded "
             "research. If the user asks for something that belongs to a "
@@ -203,10 +207,28 @@ AI_MODES: dict[str, dict] = {
         "uses_web_search": False,
         "special_handler": "pptx",
         "supports_regenerate": True,
-        "image_prompt": (
-            "Generate a professional, modern presentation slide image. "
-            "Clean corporate style, high quality, suitable for a PowerPoint presentation. "
-            "No text or words in the image. Abstract and visually appealing."
-        ),
     },
 }
+
+# ---------------------------------------------------------------------------
+# v2.1 — "Think more, respond less"
+#
+# Applied to every text-generating mode except pptx_generator (which must
+# output strict JSON and shouldn't have its format nudged). Encourages the
+# model to reason carefully before answering, while keeping the visible
+# response tight and free of filler.
+# ---------------------------------------------------------------------------
+_THINK_MORE_RESPOND_LESS = (
+    "\n\nv2.1 RESPONSE STYLE: Think the problem through carefully and "
+    "thoroughly before answering — consider edge cases, double-check your "
+    "reasoning, and make sure your answer is correct and complete. However, "
+    "your FINAL response to the user should be as concise as possible: no "
+    "filler, no repeating the question back, no unnecessary preamble or "
+    "closing summary. Get straight to the point. Only go into more depth if "
+    "the user explicitly asks for a detailed explanation."
+)
+
+for _key, _mode in AI_MODES.items():
+    if _key == "pptx_generator":
+        continue
+    _mode["system_prompt"] = _mode["system_prompt"] + _THINK_MORE_RESPOND_LESS

@@ -28,11 +28,13 @@ from typing import Any
 import requests
 from flask import (
     Blueprint,
+    Response,
     jsonify,
     redirect,
     request,
     send_from_directory,
     session,
+    stream_with_context,
     url_for,
 )
 from pptx import Presentation
@@ -40,9 +42,9 @@ from pptx.util import Inches, Pt  # noqa: F401
 
 from app.config.ai_modes import AI_MODES
 from app.config.settings import Config
-from app.services.ai_client import ask_ai, ask_groq_vision
+from app.services.ai_client import ask_ai, ask_ai_stream, ask_groq_vision
 from app.services.memory import retrieve_relevant_memory
-from app.services.search import tavily_search
+from app.services.search import web_search, format_sources
 from app.services.storage import get_user_memory, update_user_memory
 from app.utils.files import (
     MAX_UPLOAD_SIZE,
@@ -74,7 +76,41 @@ def _user_wants_file(message: str) -> bool:
 
 # ---------------------------------------------------------------------------
 # PPTX generation helpers — v4.0 with Pollinations.ai images
+# v2.1: Agentic pipeline — Prompt -> [Image Generator AI] ->
+#       [Slide Generator AI] -> (PPTX) Output. All models must come from
+#       OpenRouter's FREE tier (Exa AI is web-search only, not used here).
 # ---------------------------------------------------------------------------
+
+# Step 2 — "AI Slide Generator": receives the finalized content (with each
+# slide flagged for whether an image was generated) and its ONLY job is to
+# validate + repackage it into the exact JSON schema for PPTX packing — NO
+# editing of titles or bullets. This is a deliberate second OpenRouter
+# free-model call, separate from the content-planning model below.
+_SLIDE_PACKER_MODE: dict = {
+    "name": "AI Slide Generator (internal)",
+    "openrouter_model": "meta-llama/llama-3.3-70b-instruct:free",
+    "model": "llama-3.3-70b-versatile",
+    "system_prompt": (
+        "You are the AI Slide Generator, the final packing step of an "
+        "agentic presentation pipeline. You receive a JSON presentation "
+        "plan whose content has ALREADY been finalized, including a "
+        "has_image flag for each slide showing whether an AI-generated "
+        "image is attached to it. "
+        "Your ONLY job is to validate this content and repackage it into "
+        "the exact same JSON schema, ready for PPTX packing. "
+        "DO NOT edit, rewrite, shorten, expand, reorder, or rephrase any "
+        "titles or bullet points — preserve them EXACTLY as given. "
+        "DO NOT add new slides or remove existing slides; the slide count "
+        "must stay identical. "
+        'Return ONLY a valid JSON object in this exact shape: '
+        '{"title": "Presentation Title", "slides": [{"title": "...", '
+        '"bullets": ["...", "..."], "has_image": true}]}. '
+        "No markdown fences, no explanations, no extra text — JSON only."
+    ),
+    "temperature": 0.1,
+    "max_tokens": 3000,
+}
+
 
 def _generate_pollinations_image(prompt: str, slide_index: int, timestamp: int) -> str | None:
     """
@@ -122,11 +158,65 @@ def _generate_pptx(ai_response: str, mode: dict | None = None) -> dict | None:
     image_paths: list[str] = []
     slide_titles: list[str] = []
 
+    # ------------------------------------------------------------------
+    # v2.1 agentic pipeline, step A — [Image Generator AI]:
+    # the content-planning model above already produced an `image_prompt`
+    # per slide. Generate the actual AI image for each slide now via
+    # Pollinations.ai (free, no key needed) BEFORE handing off to the
+    # Slide Generator AI, so it can pack with full knowledge of which
+    # slides have images.
+    # ------------------------------------------------------------------
+    slide_images: list[str | None] = []
+    for idx, slide_data in enumerate(slides):
+        img_prompt = slide_data.get(
+            "image_prompt", f"Professional presentation slide about {slide_data.get('title', 'this topic')}"
+        )
+        slide_images.append(_generate_pollinations_image(img_prompt, idx, timestamp))
+
+    # ------------------------------------------------------------------
+    # v2.1 agentic pipeline, step B — [Slide Generator AI]:
+    # a second OpenRouter free-model call whose only job is to validate
+    # and repackage the finalized content (titles/bullets unchanged) plus
+    # the has_image flags into the exact schema we need. If this step
+    # fails for any reason, we fall back to the original step-1 plan so
+    # the pipeline still produces a valid PPTX.
+    # ------------------------------------------------------------------
+    try:
+        pack_input = json.dumps({
+            "title": title,
+            "slides": [
+                {
+                    "title": s.get("title", "Untitled"),
+                    "bullets": s.get("bullets", []),
+                    "has_image": slide_images[i] is not None,
+                }
+                for i, s in enumerate(slides)
+            ],
+        })
+        packed_raw = ask_ai(pack_input, mode=_SLIDE_PACKER_MODE)
+        packed_text = packed_raw.strip()
+        if packed_text.startswith("```"):
+            packed_text = packed_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        packed = json.loads(packed_text)
+        packed_slides = packed.get("slides", [])
+        if packed_slides and len(packed_slides) == len(slides):
+            for i, ps in enumerate(packed_slides):
+                if ps.get("title"):
+                    slides[i]["title"] = ps["title"]
+                if ps.get("bullets"):
+                    slides[i]["bullets"] = ps["bullets"]
+            if packed.get("title"):
+                title = packed["title"]
+    except Exception as exc:  # pragma: no cover
+        print(f"[Slide Generator AI error] {exc} — using original plan")
+
+    # ------------------------------------------------------------------
+    # Step C — (PPTX) Output: deterministic packing, no AI involved.
+    # ------------------------------------------------------------------
     for idx, slide_data in enumerate(slides):
         slide_title = slide_data.get("title", "Untitled")
         slide_titles.append(slide_title)
         bullets = slide_data.get("bullets", [])
-        img_prompt = slide_data.get("image_prompt", f"Professional presentation slide about {slide_title}")
 
         # Title + content layout
         slide = prs.slides.add_slide(prs.slide_layouts[5])  # blank layout
@@ -138,14 +228,14 @@ def _generate_pptx(ai_response: str, mode: dict | None = None) -> dict | None:
         tf.paragraphs[0].font.size = Pt(32)
         tf.paragraphs[0].font.bold = True
 
-        # Add image if we can get one
-        img_path = _generate_pollinations_image(img_prompt, idx, timestamp)
+        # Add the image generated in step A, if any
+        img_path = slide_images[idx]
         if img_path and os.path.exists(img_path):
             try:
                 slide.shapes.add_picture(img_path, Inches(5.5), Inches(1.3), width=Inches(4))
                 image_paths.append(img_path)
             except Exception:
-                pass  # Skip image if it fails
+                img_path = None  # Skip image if it fails
 
         # Add bullet points
         left = Inches(0.5) if img_path else Inches(0.5)
@@ -302,13 +392,19 @@ def chat():
         return jsonify({"ok": False, "error": "Empty message."}), 400
 
     vector_mem = retrieve_relevant_memory(user_id, mode_key, message or "file analysis")
-    web_ctx = tavily_search(message) if mode.get("uses_web_search") and message else ""
+    search_result = web_search(message) if mode.get("uses_web_search") and message else {}
+    web_ctx = search_result.get("context", "")
+    sources = search_result.get("sources", [])
 
     try:
         # v4.0: Use ask_ai() for HF-first, Groq-fallback routing
         answer = ask_ai(full_message, vector_mem, web_ctx, mode, recent_history=recent_history)
     except Exception as exc:
         return jsonify({"ok": False, "error": f"AI error: {exc}"}), 500
+
+    # v2.1: After a deep-research web search, sources MUST be stated.
+    if web_ctx and sources:
+        answer += format_sources(sources)
 
     # PPTX special handler — v4.0 with images
     if mode.get("special_handler") == "pptx":
@@ -350,6 +446,94 @@ def chat():
     update_user_memory(memory_key, "user", user_content)
     update_user_memory(memory_key, "assistant", answer)
     return jsonify({"ok": True, "response": answer})
+
+
+@chat_bp.route("/chat/stream", methods=["POST"])
+def chat_stream():
+    """
+    v2.1 — SSE streaming chat ("AI text tracker").
+
+    POST JSON {"message": "..."} (text-only — file uploads still go
+    through /chat). Streams the AI's response as Server-Sent Events:
+
+      data: {"delta": "..."}        — one or more text chunks
+      data: {"error": "..."}        — something went wrong mid-stream
+      data: {"done": true, ...}      — final event; may include
+                                        download_url / download_name for
+                                        Developer-mode code ZIPs.
+
+    Slides Generator (pptx) is intentionally NOT streamed here — its raw
+    JSON output isn't meant to be shown to the user, so it keeps using the
+    non-streaming /chat endpoint.
+    """
+    if "user_id" not in session:
+        return jsonify({"ok": False, "error": "Not authenticated."}), 401
+
+    user_id = session["user_id"]
+    mode_key = session.get("ai_mode", "researcher")
+    mode = AI_MODES.get(mode_key, AI_MODES["researcher"])
+
+    if mode.get("special_handler") == "pptx":
+        return jsonify({"ok": False, "error": "Slides Generator does not support streaming."}), 400
+
+    data = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
+    if not message:
+        return jsonify({"ok": False, "error": "Empty message."}), 400
+
+    memory_key = f"{user_id}:{mode_key}"
+    recent_history = get_user_memory(memory_key)
+
+    vector_mem = retrieve_relevant_memory(user_id, mode_key, message)
+    search_result = web_search(message) if mode.get("uses_web_search") else {}
+    web_ctx = search_result.get("context", "")
+    sources = search_result.get("sources", [])
+
+    def generate():
+        chunks: list[str] = []
+        try:
+            for piece in ask_ai_stream(message, vector_mem, web_ctx, mode, recent_history=recent_history):
+                chunks.append(piece)
+                yield f"data: {json.dumps({'delta': piece})}\n\n"
+        except Exception as exc:
+            yield f"data: {json.dumps({'error': f'AI error: {exc}'})}\n\n"
+            return
+
+        answer = "".join(chunks)
+
+        # v2.1: After a deep-research web search, sources MUST be stated.
+        if web_ctx and sources:
+            src_md = format_sources(sources)
+            answer += src_md
+            yield f"data: {json.dumps({'delta': src_md})}\n\n"
+
+        done_payload: dict[str, Any] = {"done": True}
+
+        # Developer mode: ZIP on explicit file request
+        if mode_key == "developer" and _user_wants_file(message):
+            code_blocks = extract_code_blocks(answer)
+            if code_blocks:
+                zip_info = save_code_as_zip(code_blocks)
+                if zip_info:
+                    done_payload["download_url"] = zip_info["url"]
+                    done_payload["download_name"] = zip_info["filename"]
+
+        try:
+            update_user_memory(memory_key, "user", message)
+            update_user_memory(memory_key, "assistant", answer)
+        except Exception:
+            pass
+
+        yield f"data: {json.dumps(done_payload)}\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # disable proxy buffering (Vercel/Nginx)
+        },
+    )
 
 @chat_bp.route("/regenerate", methods=["POST"])
 def regenerate():
@@ -397,7 +581,9 @@ def regenerate():
         clean_msg = clean_msg.split("--- Uploaded File:")[0].strip()
 
     vector_mem = retrieve_relevant_memory(user_id, mode_key, clean_msg)
-    web_ctx = tavily_search(clean_msg) if mode.get("uses_web_search") else ""
+    search_result = web_search(clean_msg) if mode.get("uses_web_search") else {}
+    web_ctx = search_result.get("context", "")
+    sources = search_result.get("sources", [])
 
     # Build history without the last assistant response
     trimmed_history = recent_history[:last_assistant_idx] if last_assistant_idx > 0 else recent_history[:-1]
@@ -409,6 +595,10 @@ def regenerate():
         answer = ask_ai(clean_msg, vector_mem, web_ctx, regen_mode, recent_history=trimmed_history)
     except Exception as exc:
         return jsonify({"ok": False, "error": f"Regeneration error: {exc}"}), 500
+
+    # v2.1: After a deep-research web search, sources MUST be stated.
+    if web_ctx and sources:
+        answer += format_sources(sources)
 
     # Update memory with the new response (replace last assistant entry)
     update_user_memory(memory_key, "assistant", answer)

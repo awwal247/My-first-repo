@@ -32,6 +32,7 @@ def register():
     except RuntimeError as exc:
         flash(f"Could not create account: {exc}","error"); return redirect(url_for("auth.register"))
     session["user_id"]=str(user["id"]); session["display_name"]=user["display_name"]
+    session["show_v21_disclaimer"]=True
     flash("Account created. Welcome!","success"); return redirect(url_for("main.menu"))
 
 @auth_bp.route("/login",methods=["GET","POST"])
@@ -51,6 +52,7 @@ def login_page():
         flash("Incorrect password.","error"); return redirect(url_for("auth.login_page"))
     session["user_id"]=str(user["id"])
     session["display_name"]=user.get("display_name") or display_name_from_email(email)
+    session["show_v21_disclaimer"]=True
     return redirect(url_for("main.menu"))
 
 @auth_bp.route("/login/google")
@@ -76,15 +78,18 @@ def auth_google_callback():
         if gu:
             session["user_id"]=str(gu["id"])
             session["display_name"]=gu.get("display_name") or display_name_from_email(em)
+            session["show_v21_disclaimer"]=True
             return redirect(url_for("main.menu"))
         eu=db_find_user_by_email(em)
         if eu:
             db_link_google_id(str(eu["id"]),gid)
             session["user_id"]=str(eu["id"])
             session["display_name"]=eu.get("display_name") or display_name_from_email(em)
+            session["show_v21_disclaimer"]=True
             return redirect(url_for("main.menu"))
         nu=db_create_user(email=em,display_name=nm,password_hash=None,google_id=gid)
         session["user_id"]=str(nu["id"]); session["display_name"]=nu["display_name"]
+        session["show_v21_disclaimer"]=True
         return redirect(url_for("main.menu"))
     except RuntimeError as exc:
         flash(f"Database error during Google sign-in: {exc}","error")

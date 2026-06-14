@@ -7,6 +7,29 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    {% if show_v21_disclaimer %}
+    <div class="v21-modal-backdrop" id="v21ModalBackdrop">
+        <div class="v21-modal">
+            <h2>🎉 Zenith OX V2.1 just got better</h2>
+            <p class="v21-modal-subtitle">Here's what's new in this update:</p>
+            <ul class="v21-feature-list">
+                <li>🔎 <strong>Exa AI deep research</strong> — Researcher mode now states its sources after every web-grounded answer.</li>
+                <li>⚡ <strong>Live AI text tracker</strong> — responses stream in real time instead of a fake typing animation; models think more, respond less.</li>
+                <li>📊 <strong>Agentic Slides pipeline</strong> — Prompt → Image Generator AI → Slide Generator AI → packed .pptx, with AI images on every slide.</li>
+                <li>🎙️ <strong>Mic button moved beside Send</strong> for faster voice input.</li>
+                <li>📎 <strong>Multi-file upload fixed</strong> — attach several files across multiple picks.</li>
+                <li>📦 <strong>Code project ZIP upload</strong> is now exclusive to Developer mode.</li>
+                <li>🎨 <strong>Refreshed UI</strong> with glassmorphism, tuned for desktop and mobile.</li>
+            </ul>
+            <button class="v21-modal-close" id="v21ModalClose">Got it, let's go</button>
+        </div>
+    </div>
+    <script>
+        document.getElementById("v21ModalClose").addEventListener("click", function () {
+            document.getElementById("v21ModalBackdrop").remove();
+        });
+    </script>
+    {% endif %}
     <div class="menu-container">
         <header class="menu-header">
             <h1>{{ greeting }} 👋</h1>

@@ -37,7 +37,10 @@ class Config:
     # Pollinations.ai — free image generation for PPTX slides
     POLLINATIONS_BASE: str = "https://image.pollinations.ai/prompt"
 
-    # Web search
+    # Web search — Exa AI is primary (v2.1), Tavily is the automatic
+    # fallback if EXA_API_KEY isn't set yet.
+    EXA_API_KEY: str = os.getenv("EXA_API_KEY", "")
+    EXA_BASE_URL: str = "https://api.exa.ai"
     TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
 
     # Google OAuth

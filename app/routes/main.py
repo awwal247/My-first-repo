@@ -49,11 +49,15 @@ def menu():
     username = session.get("display_name") or session["user_id"]
     greeting = time_based_greeting(username)
 
+    # v2.1: show the "what's new" disclaimer once, right after sign-in.
+    show_v21_disclaimer = session.pop("show_v21_disclaimer", False)
+
     return render_template(
         "menu.html",
         username=username,
         greeting=greeting,
         modes=AI_MODES,
+        show_v21_disclaimer=show_v21_disclaimer,
     )
 
 @main_bp.route("/select-mode/<mode_key>")
