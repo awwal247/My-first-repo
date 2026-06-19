@@ -1,168 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ mode.name }} — Zenith OX</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith OX — {{ mode.name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
-<div class="app-shell">
-  <!-- Sidebar (app shell) -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-top">
-      <div class="logo-row">
-        <span class="logo-mark">✦</span>
-        <span class="logo-text" id="logoText">ZENITH OX</span>
-        <button class="collapse-btn" id="collapseBtn" title="Toggle sidebar">‹</button>
-      </div>
-      <a href="{{ url_for('main.index') }}" class="new-chat-btn">
-        <span class="new-chat-icon">✦</span>
-        <span class="sidebar-label-text">New Chat</span>
-      </a>
-    </div>
-    <nav class="sidebar-nav">
-      {% for href, icon, label in [
-        ('/home', '⌂', 'Home'),
-        ('/chat', '💬', 'Chat'),
-        ('/modes', '⊞', 'Modes'),
-        ('/research', '🔎', 'Research'),
-        ('/vision', '👁', 'Vision AI'),
-        ('/memory', '🧠', 'Memory'),
-        ('/presentations', '📊', 'Presentations'),
-        ('/files', '📁', 'Files'),
-        ('/history', '🕓', 'History'),
-      ] %}
-      <a href="{{ href }}" class="nav-link {% if request.path == href %}active{% endif %}">
-        <span class="nav-icon">{{ icon }}</span>
-        <span class="nav-label sidebar-label-text">{{ label }}</span>
-      </a>
-      {% endfor %}
-    </nav>
-    <div class="sidebar-footer">
-      {% for href, icon, label in [
-        ('/notifications', '🔔', 'Notifications'),
-        ('/profile', '👤', 'Profile'),
-        ('/admin', '🛡', 'Admin'),
-        ('/settings', '⚙', 'Settings'),
-        ('/help', '❓', 'Help'),
-      ] %}
-      <a href="{{ href }}" class="nav-link"><span class="nav-icon">{{ icon }}</span><span class="nav-label sidebar-label-text">{{ label }}</span></a>
-      {% endfor %}
-      <a href="{{ url_for('auth.logout') }}" class="nav-link nav-link-logout"><span class="nav-icon">⎋</span><span class="nav-label sidebar-label-text">Logout</span></a>
-    </div>
-    <!-- Chat history in sidebar -->
-    <div class="zh-sidebar-history" id="zh-sidebar-history">
-      <div class="zh-sidebar-header">
-        <span class="zh-sidebar-title">💬 Chats</span>
-        <button id="zh-new-chat-btn">+ New</button>
-      </div>
-      <div class="zh-search-box">
-        <input type="text" id="zh-search-input" placeholder="Search chats…">
-      </div>
-      <div id="zh-chat-list"></div>
-    </div>
-  </aside>
-  <div class="sidebar-mobile-overlay" id="zh-backdrop"></div>
+    <div class="layout">
 
-  <!-- Main chat area -->
-  <main class="chat-main">
-    <div class="top-bar">
-      <div class="top-bar-left">
-        <button class="zh-sidebar-toggle-btn" id="zh-sidebar-toggle">☰</button>
-        <div id="modeIndicator">
-          <span class="mode-emoji">{{ mode.emoji }}</span>
-          <span>{{ mode.name }}</span>
-        </div>
-      </div>
-      <div class="top-bar-actions">
-        <button class="icon-btn" id="memoryBtn" title="Memory sidebar">🧠</button>
-        <button class="icon-btn" id="exportBtn" title="Export chat">📥</button>
-        <div class="export-dropdown" id="exportDropdown">
-          <button data-format="md">Markdown</button>
-          <button data-format="txt">Text</button>
-          <button data-format="json">JSON</button>
-        </div>
-        <button class="icon-btn" id="regenerateBtn" title="Regenerate">🔄</button>
-        <button class="icon-btn" id="clearBtn" title="Clear memory">🗑️</button>
-        <a href="{{ url_for('auth.logout') }}" class="icon-btn" title="Logout">⎋</a>
-      </div>
+        <!-- Left Sidebar -->
+        <aside class="zh-sidebar" id="zh-sidebar">
+            <div class="zh-sidebar-top">
+                <div class="zh-sidebar-brand">
+                    <div class="logo-icon logo-icon-sm">&#9711;</div>
+                    <span class="logo-text">ZENITH OX</span>
+                </div>
+                <button id="zh-new-chat-btn" onclick="ChatHistory.startNewChat(window.ZENITH_MODE)">
+                    <span>&#43;</span> New Chat
+                </button>
+            </div>
+            <div class="zh-search-box">
+                <span class="zh-search-icon">&#128269;</span>
+                <input type="text" id="zh-search-input" placeholder="Search chats..." aria-label="Search chats">
+                <kbd class="zh-search-kbd">&#8984;K</kbd>
+            </div>
+            <div class="zh-section-label">Pinned</div>
+            <div id="zh-chat-list"></div>
+            <div class="zh-sidebar-footer">
+                <div class="zh-user-row">
+                    <div class="zh-user-avatar">{{ username[0]|upper if username else 'U' }}</div>
+                    <div class="zh-user-info">
+                        <span class="zh-user-name">{{ username }}</span>
+                        <span class="zh-user-plan">Pro Plan</span>
+                    </div>
+                    <button class="zh-user-menu-btn" title="Menu">&#8943;</button>
+                </div>
+            </div>
+        </aside>
+        <div class="zh-backdrop" id="zh-backdrop"></div>
+
+        <!-- Main Chat -->
+        <main class="chat-main">
+
+            <!-- Top bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="zh-sidebar-toggle-btn" id="zh-sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+                    <div class="model-pill">
+                        <span class="model-pill-dot"></span>
+                        GPT-4o via OpenRouter
+                        <span class="model-pill-arrow">&#8964;</span>
+                    </div>
+                    <div class="mode-badge" id="modeIndicator">
+                        <span class="mode-emoji">{{ mode.emoji }}</span>
+                        <span>{{ mode.name }}</span>
+                        <span class="mode-badge-arrow">&#8964;</span>
+                    </div>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="icon-btn" id="memoryBtn" title="Memory sidebar">&#129504;</button>
+                    <button class="icon-btn" id="exportBtn" title="Export chat">&#128229;</button>
+                    <div class="export-dropdown" id="exportDropdown">
+                        <button data-format="md">Markdown</button>
+                        <button data-format="txt">Text</button>
+                        <button data-format="json">JSON</button>
+                    </div>
+                    <button class="icon-btn" id="regenerateBtn" title="Regenerate">&#8635;</button>
+                    <button class="icon-btn" id="clearBtn" title="Clear memory">&#128465;</button>
+                    <button class="icon-btn" id="logoutBtn" title="Logout">&#8651;</button>
+                </div>
+            </div>
+
+            <!-- Chat messages -->
+            <div id="chat-box">
+                <div class="message bot welcome">
+                    <h2>{{ mode.emoji }} {{ mode.name }}</h2>
+                    <p><strong>{{ greeting }}</strong> &#128075;</p>
+                    <p>You are in <strong>{{ mode.name }}</strong> mode.</p>
+                    <p>{{ mode.tagline }}</p>
+                    <p>Type a message below or upload files to get started.</p>
+                </div>
+            </div>
+            <button id="scrollToBottomBtn" class="scroll-to-bottom-btn hidden" title="Scroll to latest">&#8595;</button>
+
+            <!-- Input area -->
+            <div class="input-area">
+                <div id="file-preview" class="hidden"></div>
+                <div class="file-actions">
+                    <button class="file-btn" id="fileBtn">&#128206; Attach files</button>
+                    {% if mode_key == 'developer' %}
+                    <button class="file-btn" id="uploadCodeBtn">&#128230; Upload code project</button>
+                    {% endif %}
+                </div>
+                <div class="input-row">
+                    <button class="input-attach-btn" id="fileBtnInline" title="Attach">&#128206;</button>
+                    <form id="chatForm">
+                        <textarea id="user-input" placeholder="Ask Zenith anything..." rows="1"></textarea>
+                    </form>
+                    <button id="micBtn" title="Voice input" aria-label="Voice input">&#127908;</button>
+                    <button id="sendBtn" title="Send" aria-label="Send">&#10148;</button>
+                </div>
+                <div class="bottom-toolbar">
+                    <div class="toolbar-left">
+                        <span id="fileCount"></span>
+                    </div>
+                    <div class="toolbar-right">
+                        <span class="toolbar-hint">Shift+Enter for new line</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Memory Sidebar -->
+        <aside class="memory-sidebar" id="memorySidebar">
+            <div class="sidebar-header">
+                <h3>&#129504; Memory</h3>
+                <button id="sidebarClose">&#10005;</button>
+            </div>
+            <div id="sidebarBody"></div>
+            <div id="sidebarEmpty">No memory yet. Start chatting!</div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
     </div>
 
-    <div id="chat-box">
-      <div class="message bot welcome">
-        <h2>{{ mode.emoji }} {{ mode.name }}</h2>
-        <p><strong>{{ greeting }}</strong> 👋</p>
-        <p>You are in <strong>{{ mode.name }}</strong> mode.</p>
-        <p>{{ mode.tagline }}</p>
-        <p>Type a message below or upload files to get started.</p>
-      </div>
-    </div>
-    <button id="scrollToBottomBtn" class="scroll-to-bottom-btn hidden" title="Scroll to latest">⬇</button>
+    <div class="toast-container" id="toastContainer"></div>
 
-    <div class="input-area">
-      <div id="file-preview" class="hidden"></div>
-      <div class="file-actions">
-        <button class="file-btn" id="fileBtn">📎 Attach files</button>
-        {% if mode_key == 'developer' %}
-        <button class="file-btn" id="uploadCodeBtn">📦 Upload code project</button>
-        {% endif %}
-      </div>
-      <div class="input-row">
-        <form id="chatForm">
-          <textarea id="user-input" placeholder="Type your message…" rows="1"></textarea>
-        </form>
-        <button id="micBtn" title="Voice input" aria-label="Voice input">🎤</button>
-        <button id="sendBtn" title="Send" aria-label="Send">↑</button>
-      </div>
-      <div class="bottom-toolbar">
-        <div class="toolbar-left"><span id="fileCount"></span></div>
-        <div class="toolbar-right"><span class="toolbar-hint">Shift+Enter for new line</span></div>
-      </div>
-    </div>
-  </main>
+    <input type="file" id="fileInput" multiple style="display:none">
+    {% if mode_key == 'developer' %}
+    <input type="file" id="codeInput" accept=".zip,.rar" style="display:none">
+    {% endif %}
 
-  <!-- Memory Sidebar -->
-  <aside class="memory-sidebar" id="memorySidebar">
-    <div class="sidebar-header">
-      <h3>🧠 Memory</h3>
-      <button id="sidebarClose">✕</button>
-    </div>
-    <div id="sidebarBody"></div>
-    <div id="sidebarEmpty">No memory yet. Start chatting!</div>
-  </aside>
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
-</div>
-
-<div class="toast-container" id="toastContainer"></div>
-<input type="file" id="fileInput" multiple style="display:none">
-{% if mode_key == 'developer' %}
-<input type="file" id="codeInput" accept=".zip,.rar" style="display:none">
-{% endif %}
-
-<script>window.ZENITH_MODE = "{{ mode_key }}";</script>
-<script>
-// Sidebar collapse (shared with base layout)
-(function() {
-  var sidebar = document.getElementById('sidebar');
-  var collapseBtn = document.getElementById('collapseBtn');
-  var collapsed = localStorage.getItem('sidebarCollapsed') === '1';
-  function applyCollapse() {
-    sidebar.classList.toggle('collapsed', collapsed);
-    if (collapseBtn) collapseBtn.textContent = collapsed ? '›' : '‹';
-    localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
-  }
-  applyCollapse();
-  if (collapseBtn) collapseBtn.addEventListener('click', function() { collapsed = !collapsed; applyCollapse(); });
-})();
-</script>
-<script src="{{ url_for('static', filename='js/chat_history_redesign.js') }}"></script>
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>window.ZENITH_MODE = "{{ mode_key }}";</script>
+    <script>
+    // Wire inline attach button to the same file input
+    document.getElementById('fileBtnInline') && document.getElementById('fileBtnInline').addEventListener('click', function() {
+        document.getElementById('fileInput').click();
+    });
+    </script>
+    <script src="{{ url_for('static', filename='js/chat_history_redesign.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

@@ -1,54 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zenith OX — Agentic AI Workspace</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith OX — Agentic AI Workspace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="landing-page">
-  <header class="landing-header">
-    <div class="landing-logo">✦ ZENITH OX</div>
-    <div class="landing-nav">
-      <a href="/login" class="btn-secondary-sm">Sign In</a>
-      <a href="/register" class="btn-primary-sm">Get Started</a>
-    </div>
-  </header>
 
-  <main class="landing-main">
-    <section class="hero">
-      <div class="hero-badge">v2.1 — Live AI Text Tracker</div>
-      <h1>Think deeper.<br>Respond sharper.<br>Build faster.</h1>
-      <p class="hero-desc">Six specialist AI modes, agentic slide generation, Exa AI deep research with cited sources, and live streaming responses — all on free OpenRouter models with Groq fallback.</p>
-      <div class="hero-stats">
-        <div class="stat-item"><strong>6</strong><span>AI Modes</span></div>
-        <div class="stat-item"><strong>Exa AI</strong><span>Deep Research</span></div>
-        <div class="stat-item"><strong>Live</strong><span>AI Text Tracker</span></div>
-        <div class="stat-item"><strong>PPTX</strong><span>Agentic Pipeline</span></div>
-      </div>
-      <div class="hero-cta">
-        <a href="/register" class="btn-primary">Get Started — It's Free</a>
-        <a href="/login" class="btn-secondary">Sign In</a>
-      </div>
+    <nav class="landing-nav">
+        <div class="landing-nav-inner">
+            <div class="landing-logo">
+                <div class="logo-icon">&#9711;</div>
+                <span class="logo-text">ZENITH OX</span>
+            </div>
+            <div class="landing-nav-links">
+                <a href="#features">Product</a>
+                <a href="#modes">Modes</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#features">Docs</a>
+            </div>
+            <div class="landing-nav-cta">
+                <a href="/login" class="btn-nav-login">Sign In</a>
+                <a href="/register" class="btn-nav-signup">Get Started &rarr;</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="landing-hero">
+        <div class="landing-hero-inner">
+            <div class="landing-hero-left">
+                <div class="hero-badge">&#10022; AGENTIC AI WORKSPACE</div>
+                <h1 class="hero-headline">
+                    Think deeper.<br>
+                    Respond sharper.<br>
+                    Build faster.
+                </h1>
+                <p class="hero-sub">
+                    ZENITH OX is your agentic AI workspace for research,
+                    creation, and execution&mdash;powered by advanced models,
+                    tools, and memory that work for you.
+                </p>
+                <div class="hero-buttons">
+                    <a href="/register" class="btn-primary">&#128640; Launch Workspace</a>
+                    <a href="/login" class="btn-ghost">&#9654; Watch demo</a>
+                </div>
+            </div>
+            <div class="landing-hero-right">
+                <div class="hero-orb-wrap">
+                    <div class="hero-orb">
+                        <div class="orb-ring orb-ring-1"></div>
+                        <div class="orb-ring orb-ring-2"></div>
+                        <div class="orb-ring orb-ring-3"></div>
+                        <div class="orb-core">&#8960;</div>
+                    </div>
+                    <div class="hero-feature-tag tag-tl">
+                        <span>&#128270;</span>
+                        <div><strong>Deep Research</strong><small>Web, papers, data</small></div>
+                    </div>
+                    <div class="hero-feature-tag tag-tr">
+                        <span>&#128065;</span>
+                        <div><strong>Vision AI</strong><small>See. Understand. Analyze.</small></div>
+                    </div>
+                    <div class="hero-feature-tag tag-bl">
+                        <span>&#129504;</span>
+                        <div><strong>Persistent Memory</strong><small>Remembers what matters</small></div>
+                    </div>
+                    <div class="hero-feature-tag tag-br">
+                        <span>&#128202;</span>
+                        <div><strong>Presentation Generator</strong><small>Slides that tell your story</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
-    <section class="features">
-      <h2>Everything you need. Nothing you don't.</h2>
-      <div class="features-grid">
-        <div class="feature-card"><h3>🔎 Exa AI Deep Research</h3><p>Researcher mode runs Exa AI-powered search and always cites its sources. Tavily is the automatic fallback.</p></div>
-        <div class="feature-card"><h3>⚡ Live AI Text Tracker</h3><p>Responses stream live via SSE — no fake typewriter. Models think fully, then deliver concise answers.</p></div>
-        <div class="feature-card"><h3>📊 Agentic Slides Pipeline</h3><p>Prompt → Image Generator AI → Slide Generator AI → packed .pptx with AI images on every slide.</p></div>
-        <div class="feature-card"><h3>🔄 OpenRouter + Groq Fallback</h3><p>OpenRouter is primary for all text modes. Groq is the automatic fallback. Llama Vision handles images.</p></div>
-        <div class="feature-card"><h3>🧠 Persistent Vector Memory</h3><p>TF-IDF + cosine similarity retrieves your most relevant past exchanges per mode, per conversation.</p></div>
-        <div class="feature-card"><h3>📎 Universal File Upload</h3><p>PDF, DOCX, XLSX, PPTX, CSV, JSON, images, and code archives — attach multiple files at once.</p></div>
-        <div class="feature-card"><h3>💻 Developer Mode</h3><p>Upload a code project as a ZIP for AI analysis, or have the AI package generated code into a downloadable ZIP.</p></div>
-        <div class="feature-card"><h3>🔐 Secure Auth</h3><p>Email + password or optional Google OAuth. Supabase PostgreSQL backend for all user data.</p></div>
-      </div>
+    <section class="landing-stats">
+        <div class="stats-inner">
+            <div class="stat-item">
+                <span class="stat-icon">&#128172;</span>
+                <strong>2.4M</strong><span>chats</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-icon">&#128101;</span>
+                <strong>180k</strong><span>users</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-icon">&#128737;</span>
+                <strong>99.9%</strong><span>uptime</span>
+            </div>
+        </div>
     </section>
-  </main>
 
-  <footer class="landing-footer">
-    <p>✦ Zenith OX v2.1 — Powered by OpenRouter · Groq · Exa AI · Supabase</p>
-  </footer>
+    <section class="landing-features" id="features">
+        <div class="features-inner">
+            <div class="feature-card">
+                <div class="feature-icon-wrap fi-blue">&#128270;</div>
+                <h3>Deep Research</h3>
+                <p>Go beyond the surface. ZENITH OX scans thousands of sources, analyzes data, and delivers insights you can trust.</p>
+                <span class="feature-arrow">&rarr;</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap fi-cyan">&#128065;</div>
+                <h3>Vision AI</h3>
+                <p>Upload images, charts, and docs. Extract insights, detect patterns, and understand anything visually.</p>
+                <span class="feature-arrow">&rarr;</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap fi-purple">&#128202;</div>
+                <h3>Presentation Generator</h3>
+                <p>Turn ideas into stunning presentations in seconds. AI-designed, on-brand, and ready to impress.</p>
+                <span class="feature-arrow">&rarr;</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap fi-amber">&#129504;</div>
+                <h3>Persistent Memory</h3>
+                <p>ZENITH OX remembers what matters&mdash;your preferences, context, and history so you can pick up where you left off.</p>
+                <span class="feature-arrow">&rarr;</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-pricing" id="pricing">
+        <div class="pricing-inner">
+            <div class="pricing-card">
+                <div class="pricing-tier-icon">&#128100;</div>
+                <div class="pricing-tier-label">Free</div>
+                <div class="pricing-price"><span class="price-amount">$0</span><span class="price-period">/mo</span></div>
+                <p class="pricing-desc">Explore the power of ZENITH OX.</p>
+                <ul class="pricing-features">
+                    <li>&#10003; 20 messages / day</li>
+                    <li>&#10003; Basic models</li>
+                    <li>&#10003; Standard tools</li>
+                </ul>
+                <a href="/register" class="pricing-btn pricing-btn-outline">Get Started</a>
+            </div>
+            <div class="pricing-card pricing-card-featured">
+                <div class="pricing-popular-badge">POPULAR</div>
+                <div class="pricing-tier-icon">&#9733;</div>
+                <div class="pricing-tier-label">Pro</div>
+                <div class="pricing-price"><span class="price-amount">$19</span><span class="price-period">/mo</span></div>
+                <p class="pricing-desc">For professionals who move fast.</p>
+                <ul class="pricing-features">
+                    <li>&#10003; Unlimited messages</li>
+                    <li>&#10003; Advanced models</li>
+                    <li>&#10003; All core tools</li>
+                    <li>&#10003; Priority support</li>
+                </ul>
+                <a href="/register" class="pricing-btn pricing-btn-primary">Start Pro Trial</a>
+            </div>
+            <div class="pricing-card">
+                <div class="pricing-tier-icon">&#128101;</div>
+                <div class="pricing-tier-label">Team</div>
+                <div class="pricing-price"><span class="price-amount">$49</span><span class="price-period">/mo</span></div>
+                <p class="pricing-desc">Collaborate and scale with your team.</p>
+                <ul class="pricing-features">
+                    <li>&#10003; Everything in Pro</li>
+                    <li>&#10003; Team workspaces</li>
+                    <li>&#10003; Shared memory</li>
+                    <li>&#10003; Admin controls</li>
+                </ul>
+                <a href="/register" class="pricing-btn pricing-btn-outline">Start Team Trial</a>
+            </div>
+            <div class="pricing-card">
+                <div class="pricing-tier-icon">&#127970;</div>
+                <div class="pricing-tier-label">Enterprise</div>
+                <div class="pricing-price"><span class="price-amount">Custom</span></div>
+                <p class="pricing-desc">Built for organizations with scale and security needs.</p>
+                <ul class="pricing-features">
+                    <li>&#10003; Private deployments</li>
+                    <li>&#10003; SSO &amp; SCIM</li>
+                    <li>&#10003; Custom integrations</li>
+                    <li>&#10003; Dedicated support</li>
+                </ul>
+                <a href="/login" class="pricing-btn pricing-btn-outline">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="landing-logo">
+                    <div class="logo-icon">&#9711;</div>
+                    <span class="logo-text">ZENITH OX</span>
+                </div>
+                <p>Agentic AI workspace for<br>research, creation, and execution.</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <a href="#features">Overview</a>
+                    <a href="#features">Features</a>
+                    <a href="#pricing">Pricing</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Resources</h4>
+                    <a href="#">Docs</a>
+                    <a href="#">API Reference</a>
+                    <a href="#">Help Center</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <a href="#">About</a>
+                    <a href="#">Blog</a>
+                    <a href="#">Contact</a>
+                </div>
+                <div class="footer-security">
+                    <div class="security-badge">&#128274;</div>
+                    <strong>Your data. Your control.</strong>
+                    <p>Enterprise-grade security, privacy-first design, and transparent policies.</p>
+                    <a href="#">Learn more &rarr;</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 ZENITH OX. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Security</a>
+                <a href="#">Status</a>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
