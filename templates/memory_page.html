@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Memory — Zenith OX{% endblock %}
+{% block content %}
+<div class="page-content p-6">
+  <div class="page-header mb-6">
+    <h1 class="page-title">🧠 Memory</h1>
+    <p class="page-sub">Your persistent vector memory across all AI modes.</p>
+  </div>
+  <div id="memoryContent">
+    <p class="muted-text">Loading memory…</p>
+  </div>
+</div>
+<script>
+fetch('/memory-sidebar').then(r => r.json()).then(data => {
+  var box = document.getElementById('memoryContent');
+  if (!data || !Object.keys(data).length) { box.innerHTML = '<p class="muted-text">No memory yet. Start chatting!</p>'; return; }
+  box.innerHTML = Object.entries(data).map(function(e) {
+    var mode = e[0], items = e[1];
+    return '<div class="glass-card mb-4"><h3 class="section-title mb-3">' + mode + '</h3>' +
+      (items.length ? items.map(function(m) {
+        return '<div class="memory-item"><span class="memory-role">' + m.role + '</span><span class="memory-text">' + m.content + '</span></div>';
+      }).join('') : '<p class="muted-text">Empty</p>') + '</div>';
+  }).join('');
+}).catch(function() { document.getElementById('memoryContent').innerHTML = '<p class="muted-text">Could not load memory.</p>'; });
+</script>
+{% endblock %}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Zenith OX{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="app-body">
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="logo-row">
+        <span class="logo-mark">✦</span>
+        <span class="logo-text" id="logoText">ZENITH OX</span>
+        <button class="collapse-btn" id="collapseBtn" title="Toggle sidebar">‹</button>
+      </div>
+      <a href="{{ url_for('main.index') }}" class="new-chat-btn sidebar-label">
+        <span class="new-chat-icon">✦</span>
+        <span class="sidebar-label-text">New Chat</span>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      {% set nav_items = [
+        ('/home', '⌂', 'Home'),
+        ('/chat', '💬', 'Chat'),
+        ('/modes', '⊞', 'Modes'),
+        ('/research', '🔎', 'Research'),
+        ('/vision', '👁', 'Vision AI'),
+        ('/memory', '🧠', 'Memory'),
+        ('/presentations', '📊', 'Presentations'),
+        ('/files', '📁', 'Files'),
+        ('/history', '🕓', 'History'),
+      ] %}
+      {% for href, icon, label in nav_items %}
+      <a href="{{ href }}" class="nav-link {% if request.path == href or request.path.startswith(href + '/') %}active{% endif %}">
+        <span class="nav-icon">{{ icon }}</span>
+        <span class="nav-label sidebar-label-text">{{ label }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+
+    <div class="sidebar-footer">
+      {% set footer_items = [
+        ('/notifications', '🔔', 'Notifications'),
+        ('/profile', '👤', 'Profile'),
+        ('/admin', '🛡', 'Admin'),
+        ('/settings', '⚙', 'Settings'),
+        ('/help', '❓', 'Help'),
+      ] %}
+      {% for href, icon, label in footer_items %}
+      <a href="{{ href }}" class="nav-link {% if request.path == href %}active{% endif %}">
+        <span class="nav-icon">{{ icon }}</span>
+        <span class="nav-label sidebar-label-text">{{ label }}</span>
+      </a>
+      {% endfor %}
+      <a href="{{ url_for('auth.logout') }}" class="nav-link nav-link-logout">
+        <span class="nav-icon">⎋</span>
+        <span class="nav-label sidebar-label-text">Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="sidebar-mobile-overlay" id="sidebarOverlay"></div>
+
+  <!-- Main content -->
+  <main class="main-content" id="mainContent">
+    <!-- Mobile top bar -->
+    <div class="mobile-topbar">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+      <span class="mobile-logo">✦ ZENITH OX</span>
+      <a href="{{ url_for('auth.logout') }}" class="mobile-logout">⎋</a>
+    </div>
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script>
+(function() {
+  var sidebar = document.getElementById('sidebar');
+  var collapseBtn = document.getElementById('collapseBtn');
+  var overlay = document.getElementById('sidebarOverlay');
+  var mobileBtn = document.getElementById('mobileMenuBtn');
+  var collapsed = localStorage.getItem('sidebarCollapsed') === '1';
+
+  function applyCollapse() {
+    sidebar.classList.toggle('collapsed', collapsed);
+    collapseBtn.textContent = collapsed ? '›' : '‹';
+    localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+  }
+  applyCollapse();
+
+  collapseBtn.addEventListener('click', function() {
+    collapsed = !collapsed;
+    applyCollapse();
+  });
+
+  mobileBtn && mobileBtn.addEventListener('click', function() {
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('visible');
+  });
+
+  overlay.addEventListener('click', function() {
+    sidebar.classList.remove('mobile-open');
+    overlay.classList.remove('visible');
+  });
+})();
+</script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

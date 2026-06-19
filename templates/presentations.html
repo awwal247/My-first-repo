@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Presentations — Zenith OX{% endblock %}
+{% block content %}
+<div class="page-content p-6">
+  <div class="page-header mb-6">
+    <h1 class="page-title">📊 AI Slides Generator</h1>
+    <p class="page-sub">Agentic pipeline: Prompt → Image AI → Slide AI → PPTX download.</p>
+  </div>
+  <div class="glass-card mb-4">
+    <div class="research-input-row">
+      <input type="text" id="pptxPrompt" class="research-input" placeholder="Describe your presentation…">
+      <a href="{{ url_for('main.select_mode', mode_key='pptx_generator') }}" class="btn-primary">Switch to Slides Mode →</a>
+    </div>
+  </div>
+  <div class="pipeline-steps">
+    {% for step in ['Prompt', 'Image Generator AI', 'Slide Generator AI', 'Validation AI', 'PPTX Download'] %}
+    <div class="pipeline-step">
+      <div class="pipeline-num">{{ loop.index }}</div>
+      <div class="pipeline-name">{{ step }}</div>
+    </div>
+    {% if not loop.last %}<div class="pipeline-arrow">→</div>{% endif %}
+    {% endfor %}
+  </div>
+  <div class="glass-card text-center p-6 mt-4">
+    <p class="muted-text">Switch to <strong>AI Slides Generator</strong> mode and describe your presentation. The AI will generate slides with images and package them as a downloadable .pptx file.</p>
+  </div>
+</div>
+{% endblock %}

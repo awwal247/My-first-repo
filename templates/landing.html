@@ -1,91 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX v2.1 — Agentic AI Workspace</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith OX — Agentic AI Workspace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="landing-page">
-    <header class="landing-header">
-        <h1>ZENITH OX</h1>
-        <p class="tagline">v2.1 — AGENTIC AI WORKSPACE</p>
-    </header>
-    <main class="landing-main">
-        <section class="hero">
-            <h2>Think deeper. Respond sharper. Build faster.</h2>
-            <p>Zenith OX combines six specialist AI modes, an agentic AI-generated
-            presentation pipeline, Exa AI deep research with cited sources, and a
-            live AI text tracker — all running on free OpenRouter models, in one
-            secure assistant.</p>
-            <div class="hero-stats">
-                <div><strong>6</strong><span>AI Modes</span></div>
-                <div><strong>Exa AI</strong><span>Deep Research</span></div>
-                <div><strong>3-Step</strong><span>Agentic Slides Pipeline</span></div>
-                <div><strong>Live</strong><span>AI Text Tracker</span></div>
-            </div>
-            <div class="hero-cta">
-                <a href="/register" class="btn-primary">Get Started</a>
-                <a href="/login" class="btn-secondary">Sign In</a>
-            </div>
-        </section>
-        <section class="features">
-            <h2>Everything you need. Nothing you don't.</h2>
-            <div class="features-grid">
-                <div class="feature">
-                    <h3>🔎 Exa AI Deep Research</h3>
-                    <p>Researcher mode runs Exa AI-powered deep research and always
-                    states its sources — every grounded answer ends with a linked
-                    Sources list.</p>
-                </div>
-                <div class="feature">
-                    <h3>⚡ Live AI Text Tracker</h3>
-                    <p>Responses stream in live, token by token, via SSE — models
-                    think things through fully before replying, then deliver
-                    concise, to-the-point answers.</p>
-                </div>
-                <div class="feature">
-                    <h3>📊 Agentic Slides Pipeline</h3>
-                    <p>Prompt → Image Generator AI → Slide Generator AI → packed
-                    .pptx. Every slide gets an AI-generated image, then a second
-                    AI validates and packs the final deck — no manual editing.</p>
-                </div>
-                <div class="feature">
-                    <h3>🧠 Persistent Vector Memory</h3>
-                    <p>TF-IDF + cosine similarity retrieves your most relevant past
-                    exchanges per mode.</p>
-                </div>
-                <div class="feature">
-                    <h3>📎 Universal File Upload</h3>
-                    <p>PDF, DOCX, XLSX, PPTX, CSV, JSON, images, and code files —
-                    attach multiple files at once.</p>
-                </div>
-                <div class="feature">
-                    <h3>💻 Developer Mode + Code ZIPs</h3>
-                    <p>Upload a code project as a ZIP for AI analysis, or have the
-                    AI package generated code into a downloadable ZIP — exclusive
-                    to Developer mode.</p>
-                </div>
-                <div class="feature">
-                    <h3>🎙️ Voice Input</h3>
-                    <p>Mic button sits right next to Send for quick voice-to-text
-                    messages, on desktop and mobile alike.</p>
-                </div>
-                <div class="feature">
-                    <h3>🔐 Secure Auth</h3>
-                    <p>Email + password or optional Google OAuth. Both share the
-                    same record.</p>
-                </div>
-                <div class="feature">
-                    <h3>🌓 Glassmorphism Dark Mode</h3>
-                    <p>Frosted-glass panels over a full dark theme, with CSS
-                    variables and persistent preferences.</p>
-                </div>
-            </div>
-        </section>
-    </main>
-    <footer class="landing-footer">
-        <p>Zenith OX v2.1 — Agentic AI Workspace, powered by free OpenRouter models + Exa AI</p>
-    </footer>
+  <header class="landing-header">
+    <div class="landing-logo">✦ ZENITH OX</div>
+    <div class="landing-nav">
+      <a href="/login" class="btn-secondary-sm">Sign In</a>
+      <a href="/register" class="btn-primary-sm">Get Started</a>
+    </div>
+  </header>
+
+  <main class="landing-main">
+    <section class="hero">
+      <div class="hero-badge">v2.1 — Live AI Text Tracker</div>
+      <h1>Think deeper.<br>Respond sharper.<br>Build faster.</h1>
+      <p class="hero-desc">Six specialist AI modes, agentic slide generation, Exa AI deep research with cited sources, and live streaming responses — all on free OpenRouter models with Groq fallback.</p>
+      <div class="hero-stats">
+        <div class="stat-item"><strong>6</strong><span>AI Modes</span></div>
+        <div class="stat-item"><strong>Exa AI</strong><span>Deep Research</span></div>
+        <div class="stat-item"><strong>Live</strong><span>AI Text Tracker</span></div>
+        <div class="stat-item"><strong>PPTX</strong><span>Agentic Pipeline</span></div>
+      </div>
+      <div class="hero-cta">
+        <a href="/register" class="btn-primary">Get Started — It's Free</a>
+        <a href="/login" class="btn-secondary">Sign In</a>
+      </div>
+    </section>
+
+    <section class="features">
+      <h2>Everything you need. Nothing you don't.</h2>
+      <div class="features-grid">
+        <div class="feature-card"><h3>🔎 Exa AI Deep Research</h3><p>Researcher mode runs Exa AI-powered search and always cites its sources. Tavily is the automatic fallback.</p></div>
+        <div class="feature-card"><h3>⚡ Live AI Text Tracker</h3><p>Responses stream live via SSE — no fake typewriter. Models think fully, then deliver concise answers.</p></div>
+        <div class="feature-card"><h3>📊 Agentic Slides Pipeline</h3><p>Prompt → Image Generator AI → Slide Generator AI → packed .pptx with AI images on every slide.</p></div>
+        <div class="feature-card"><h3>🔄 OpenRouter + Groq Fallback</h3><p>OpenRouter is primary for all text modes. Groq is the automatic fallback. Llama Vision handles images.</p></div>
+        <div class="feature-card"><h3>🧠 Persistent Vector Memory</h3><p>TF-IDF + cosine similarity retrieves your most relevant past exchanges per mode, per conversation.</p></div>
+        <div class="feature-card"><h3>📎 Universal File Upload</h3><p>PDF, DOCX, XLSX, PPTX, CSV, JSON, images, and code archives — attach multiple files at once.</p></div>
+        <div class="feature-card"><h3>💻 Developer Mode</h3><p>Upload a code project as a ZIP for AI analysis, or have the AI package generated code into a downloadable ZIP.</p></div>
+        <div class="feature-card"><h3>🔐 Secure Auth</h3><p>Email + password or optional Google OAuth. Supabase PostgreSQL backend for all user data.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <p>✦ Zenith OX v2.1 — Powered by OpenRouter · Groq · Exa AI · Supabase</p>
+  </footer>
 </body>
 </html>

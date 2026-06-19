@@ -1,53 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX — Choose Your AI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    {% if show_v21_disclaimer %}
-    <div class="v21-modal-backdrop" id="v21ModalBackdrop">
-        <div class="v21-modal">
-            <h2>🎉 Zenith OX V2.1 just got better</h2>
-            <p class="v21-modal-subtitle">Here's what's new in this update:</p>
-            <ul class="v21-feature-list">
-                <li>🔎 <strong>Exa AI deep research</strong> — Researcher mode now states its sources after every web-grounded answer.</li>
-                <li>⚡ <strong>Live AI text tracker</strong> — responses stream in real time instead of a fake typing animation; models think more, respond less.</li>
-                <li>📊 <strong>Agentic Slides pipeline</strong> — Prompt → Image Generator AI → Slide Generator AI → packed .pptx, with AI images on every slide.</li>
-                <li>🎙️ <strong>Mic button moved beside Send</strong> for faster voice input.</li>
-                <li>📎 <strong>Multi-file upload fixed</strong> — attach several files across multiple picks.</li>
-                <li>📦 <strong>Code project ZIP upload</strong> is now exclusive to Developer mode.</li>
-                <li>🎨 <strong>Refreshed UI</strong> with glassmorphism, tuned for desktop and mobile.</li>
-            </ul>
-            <button class="v21-modal-close" id="v21ModalClose">Got it, let's go</button>
-        </div>
+{% extends "base.html" %}
+{% block title %}Home — Zenith OX{% endblock %}
+
+{% block content %}
+{% if show_v21_disclaimer %}
+<div class="modal-backdrop" id="v21Backdrop">
+  <div class="modal-card">
+    <h2>🎉 Zenith OX v2.1 — What's New</h2>
+    <ul class="feature-list">
+      <li>🔎 <strong>Exa AI deep research</strong> with cited sources in Researcher mode</li>
+      <li>⚡ <strong>Live AI text tracker</strong> — real-time streaming, no fake animation</li>
+      <li>📊 <strong>Agentic Slides pipeline</strong> — Prompt → Image AI → Slide AI → .pptx</li>
+      <li>🎙️ <strong>Voice input</strong> mic button beside Send</li>
+      <li>📎 <strong>Multi-file upload</strong> with image & document support</li>
+      <li>🔐 <strong>Google OAuth</strong> + email/password auth</li>
+    </ul>
+    <button class="btn-primary" id="v21Close">Got it, let's go →</button>
+  </div>
+</div>
+<script>document.getElementById('v21Close').onclick = function(){ document.getElementById('v21Backdrop').remove(); };</script>
+{% endif %}
+
+<div class="page-content p-6">
+  <!-- Welcome banner -->
+  <div class="glass-card hero-banner mb-6">
+    <div class="hero-glow"></div>
+    <div class="hero-icon">✦</div>
+    <h1 class="hero-title">{{ greeting }}</h1>
+    <p class="hero-sub">Choose an AI mode below or continue where you left off.</p>
+  </div>
+
+  <!-- Quick actions -->
+  <section class="mb-6">
+    <h2 class="section-title">Quick actions</h2>
+    <div class="quick-actions-grid">
+      <a href="{{ url_for('main.index') }}" class="quick-card">
+        <div class="quick-icon" style="--qa-color:#6366f1">💬</div>
+        <div class="quick-name">New Chat</div>
+        <p class="quick-desc">Start a conversation</p>
+      </a>
+      <a href="{{ url_for('main.research') }}" class="quick-card">
+        <div class="quick-icon" style="--qa-color:#3b82f6">🔎</div>
+        <div class="quick-name">Deep Research</div>
+        <p class="quick-desc">Exa AI-powered search</p>
+      </a>
+      <a href="{{ url_for('main.presentations') }}" class="quick-card">
+        <div class="quick-icon" style="--qa-color:#10b981">📊</div>
+        <div class="quick-name">Generate Slides</div>
+        <p class="quick-desc">Agentic PPTX pipeline</p>
+      </a>
+      <a href="{{ url_for('main.vision') }}" class="quick-card">
+        <div class="quick-icon" style="--qa-color:#ec4899">👁</div>
+        <div class="quick-name">Vision AI</div>
+        <p class="quick-desc">Analyze images with Llama</p>
+      </a>
     </div>
-    <script>
-        document.getElementById("v21ModalClose").addEventListener("click", function () {
-            document.getElementById("v21ModalBackdrop").remove();
-        });
-    </script>
-    {% endif %}
-    <div class="menu-container">
-        <header class="menu-header">
-            <h1>{{ greeting }} 👋</h1>
-            <p class="username">👤 {{ username }} <a href="/logout">⎋ Logout</a></p>
-        </header>
-        <main class="menu-grid">
-            <h2>Choose Your AI Assistant</h2>
-            <p class="subtitle">Each mode is tuned for a specific task</p>
-            <div class="modes-grid">
-                {% for key, mode in modes.items() %}
-                <a href="/select-mode/{{ key }}" class="mode-card">
-                    <span class="mode-emoji">{{ mode.emoji }}</span>
-                    <h3>{{ mode.name }}</h3>
-                    <p>{{ mode.tagline }}</p>
-                </a>
-                {% endfor %}
-            </div>
-        </main>
+  </section>
+
+  <!-- AI Modes -->
+  <section class="mb-6">
+    <div class="section-header">
+      <h2 class="section-title">AI Modes</h2>
+      <a href="{{ url_for('main.modes') }}" class="section-link">View all →</a>
     </div>
-</body>
-</html>
+    <div class="modes-quick-grid">
+      {% for key, mode in modes.items() %}
+      <a href="{{ url_for('main.select_mode', mode_key=key) }}"
+         class="mode-quick-card {% if key == current_mode_key %}active{% endif %}">
+        <span class="mode-quick-emoji">{{ mode.emoji }}</span>
+        <span class="mode-quick-name">{{ mode.name }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Recent chats sidebar row -->
+  <section>
+    <div class="section-header">
+      <h2 class="section-title">Recent chats</h2>
+      <a href="{{ url_for('main.history') }}" class="section-link">View all →</a>
+    </div>
+    <div class="glass-card" id="recentChatsBox">
+      <p class="muted-text" id="recentChatsPlaceholder">Loading recent chats…</p>
+    </div>
+  </section>
+</div>
+
+<script>
+fetch('/api/chats?limit=5').then(r => r.json()).then(data => {
+  var box = document.getElementById('recentChatsBox');
+  var chats = data.chats || [];
+  if (!chats.length) {
+    box.innerHTML = '<p class="muted-text">No chats yet. Start one above!</p>';
+    return;
+  }
+  box.innerHTML = chats.map(function(c) {
+    return '<a href="/chat?chat_id=' + c.id + '" class="recent-chat-row">' +
+      '<span class="recent-chat-icon">💬</span>' +
+      '<span class="recent-chat-title">' + (c.title || 'Untitled') + '</span>' +
+      '<span class="recent-chat-time">' + (c.updated_at ? c.updated_at.slice(0,10) : '') + '</span>' +
+    '</a>';
+  }).join('');
+}).catch(function() {
+  document.getElementById('recentChatsPlaceholder').textContent = 'Could not load recent chats.';
+});
+</script>
+{% endblock %}

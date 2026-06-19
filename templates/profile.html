@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Profile — Zenith OX{% endblock %}
+{% block content %}
+<div class="page-content p-6">
+  <div class="page-header mb-6"><h1 class="page-title">👤 Profile</h1></div>
+  <div class="glass-card profile-card">
+    <div class="profile-avatar">{{ username[0]|upper }}</div>
+    <h2 class="profile-name">{{ username }}</h2>
+    {% if user_email %}<p class="muted-text">{{ user_email }}</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

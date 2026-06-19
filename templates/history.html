@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}History — Zenith OX{% endblock %}
+{% block content %}
+<div class="page-content p-6">
+  <div class="page-header mb-6">
+    <h1 class="page-title">Chat History</h1>
+    <p class="page-sub">All your past conversations across every mode.</p>
+  </div>
+  <div class="glass-card" id="historyList">
+    <p class="muted-text">Loading history…</p>
+  </div>
+</div>
+<script>
+fetch('/api/chats?limit=50').then(r => r.json()).then(data => {
+  var box = document.getElementById('historyList');
+  var chats = data.chats || [];
+  if (!chats.length) { box.innerHTML = '<p class="muted-text">No chats yet.</p>'; return; }
+  box.innerHTML = '<div class="history-grid">' + chats.map(function(c) {
+    return '<div class="history-item">' +
+      '<div class="history-item-left">' +
+        '<span class="history-icon">💬</span>' +
+        '<div>' +
+          '<div class="history-title">' + (c.title || 'Untitled') + '</div>' +
+          '<div class="history-meta">' + (c.mode || '') + ' · ' + (c.updated_at ? c.updated_at.slice(0,16).replace('T',' ') : '') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="history-actions">' +
+        '<a href="/chat?chat_id=' + c.id + '" class="btn-sm">Open</a>' +
+        '<button class="btn-sm btn-danger" onclick="deleteChat(\'' + c.id + '\', this)">Delete</button>' +
+      '</div>' +
+    '</div>';
+  }).join('') + '</div>';
+}).catch(function() { document.getElementById('historyList').innerHTML = '<p class="muted-text">Could not load history.</p>'; });
+
+function deleteChat(id, btn) {
+  if (!confirm('Delete this chat?')) return;
+  fetch('/api/chats/' + id, { method: 'DELETE' }).then(function(r) {
+    if (r.ok) btn.closest('.history-item').remove();
+  });
+}
+</script>
+{% endblock %}

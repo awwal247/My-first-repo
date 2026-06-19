@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Research — Zenith OX{% endblock %}
+{% block content %}
+<div class="page-content p-6">
+  <div class="page-header mb-6">
+    <h1 class="page-title">🔎 Deep Research</h1>
+    <p class="page-sub">Exa AI-powered research with cited sources. Tavily fallback if Exa is unavailable.</p>
+  </div>
+  <div class="glass-card mb-4">
+    <div class="research-input-row">
+      <input type="text" id="researchQuery" class="research-input" placeholder="What do you want to research?" value="">
+      <a href="{{ url_for('main.select_mode', mode_key='researcher') }}" class="btn-primary" id="researchBtn">Run Research →</a>
+    </div>
+  </div>
+  <div class="glass-card text-center p-6">
+    <p class="muted-text">For deep, cited research, switch to <strong>Researcher mode</strong> and ask your question in chat. Sources will appear automatically after the answer.</p>
+    <a href="{{ url_for('main.select_mode', mode_key='researcher') }}" class="btn-primary mt-4" style="display:inline-block">Switch to Researcher →</a>
+  </div>
+</div>
+{% endblock %}

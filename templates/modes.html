@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Modes — Zenith OX{% endblock %}
+{% block content %}
+<div class="page-content p-6">
+  <div class="text-center mb-8">
+    <h1 class="hero-title">Choose your <span class="text-gradient">mode</span></h1>
+    <p class="hero-sub">Each mode tunes Zenith for a specific kind of thinking.</p>
+  </div>
+  <div class="modes-grid-full">
+    {% for key, mode in modes.items() %}
+    <a href="{{ url_for('main.select_mode', mode_key=key) }}"
+       class="mode-card-full {% if key == current_mode_key %}selected{% endif %}">
+      <div class="mode-number">{{ loop.index }}</div>
+      <div class="mode-card-icon">{{ mode.emoji }}</div>
+      <h3 class="mode-card-name">{{ mode.name }}</h3>
+      <p class="mode-card-desc">{{ mode.tagline }}</p>
+      <div class="mode-card-bar"></div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
