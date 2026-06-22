@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX v2.5 — {{ mode.name }}</title>
+    <title>Zenith OX v2.6 — {{ mode.name }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
         <aside class="zh-sidebar" id="zh-sidebar">
             <div class="zh-sidebar-header zh-sidebar-header--brand">
                 <div>
-                    <div class="brand-mini">Zenith OX v2.5</div>
+                    <div class="brand-mini">Zenith OX v2.6</div>
                     <span class="zh-sidebar-title">Conversations</span>
                 </div>
                 <button id="zh-new-chat-btn" onclick="ChatHistory.startNewChat(window.ZENITH_MODE)">+ New Chat</button>
@@ -30,7 +30,7 @@
             </div>
             <div class="workspace-sidebar-meta">
                 <span class="workspace-chip workspace-chip--solid">{{ mode.emoji }} {{ mode.name }}</span>
-                <span class="workspace-chip">v2.5 workspace</span>
+                <span class="workspace-chip">v2.6 workspace</span>
             </div>
             <div id="zh-chat-list"></div>
             <div class="workspace-sidebar-footer">
@@ -47,7 +47,7 @@
                 <div class="top-bar-left top-bar-left--workspace">
                     <button class="zh-sidebar-toggle-btn" id="zh-sidebar-toggle">☰</button>
                     <div>
-                        <div class="top-label">Standard workspace</div>
+                        <div class="top-label">v2.6 workspace</div>
                         <div id="modeIndicator">
                             <span class="mode-emoji">{{ mode.emoji }}</span>
                             <span>{{ mode.name }}</span>
@@ -82,7 +82,7 @@
                 <div class="message bot welcome welcome-panel">
                     <div class="welcome-panel__eyebrow">Workspace ready</div>
                     <h2>{{ mode.emoji }} {{ mode.name }}</h2>
-                    <p><strong>{{ greeting }}</strong> — Zenith OX v2.5 now includes a standard rounded composer, visible thinking trace, import sheet, exact download naming, and model switching.</p>
+                    <p><strong>{{ greeting }}</strong> — Zenith OX v2.6 now includes a standard rounded composer, visible thinking trace, import sheet, exact download naming, and model switching.</p>
                     <div class="welcome-pill-row">
                         <span>Thinking trace</span>
                         <span>Bottom attach sheet</span>
@@ -136,9 +136,9 @@
                 <p>{{ mode.tagline }}</p>
             </section>
             <section class="rail-card rail-card--workspace">
-                <span class="rail-card__eyebrow">What changed in v2.5</span>
+                <span class="rail-card__eyebrow">What changed in v2.6</span>
                 <div class="mini-list">
-                    <div class="mini-list__item"><strong>Prompt redesign</strong><span>Rounded, popular-AI style composer with inline plus button.</span></div>
+                    <div class="mini-list__item"><strong>Scroll fixed</strong><span>Mobile &amp; desktop scrolling now works correctly on all pages.</span></div>
                     <div class="mini-list__item"><strong>Thinking trace</strong><span>A visible pre-response status appears in the conversation before the answer lands.</span></div>
                     <div class="mini-list__item"><strong>Real imports</strong><span>Google Drive and GitHub public links can be pulled straight into the pending attachments queue.</span></div>
                     <div class="mini-list__item"><strong>Model control</strong><span>Switch between Meta Llama, GPT OSS 120B, Gemini Flash, and Gemini Pro from the workspace.</span></div>

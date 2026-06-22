@@ -1,5 +1,5 @@
 /* ==========================================================
-   ZENITH OX v2.5 — Workspace Chat UI
+   ZENITH OX v2.6 — Workspace Chat UI
    Rounded composer, thinking trace, import sheet, model switcher
    ========================================================== */
 (() => {

@@ -1,5 +1,5 @@
 /* ==========================================================
-   ZENITH OX v4.0 — Stylesheet
+   ZENITH OX v2.6 — Stylesheet
    ========================================================== */
 
 /* ── CSS Variables — Glass Dark Theme ─────────────────────────
@@ -57,15 +57,8 @@
 /* ── Base ──────────────────────────────────────────────────── */
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body { height: 100%; }
+html { height: 100%; }
 
-body:has(.auth-container),
-body:has(.menu-container),
-body:has(.landing-page) {
-  height: auto;
-  min-height: 100vh;
-  overflow: auto;
-}
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -76,15 +69,22 @@ body {
     radial-gradient(ellipse 60% 60% at 50% 100%, rgba(59, 130, 246, 0.12), transparent 60%);
   background-attachment: fixed;
   color: var(--fg);
+  min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* Only the workspace/chat app uses a locked-scroll full-viewport layout */
+body.workspace-page {
   height: 100vh;
   overflow: hidden;
-  transition: background var(--transition), color var(--transition);
 }
 
 /* ── Layout ────────────────────────────────────────────────── */
 .layout {
   display: flex;
-  height: 100vh;
+  height: 100%;
 }
 
 
@@ -170,6 +170,7 @@ body {
 #zh-chat-list {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 8px;
 }
 
@@ -399,6 +400,7 @@ body {
 #chat-box {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 24px 20px 120px;
   display: flex;
   flex-direction: column;
@@ -1143,10 +1145,12 @@ body.sidebar-open {
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(124,92,255,0.5); }
+/* Firefox */
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.14) transparent; }
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -1369,8 +1373,7 @@ body.sidebar-open {
 
 /* ── Landing page ──────────────────────────────────────────── */
 .landing-page {
-  height: auto;
-  overflow: auto;
+  /* Landing page scrolls freely via body default overflow:auto */
   color: var(--fg);
 }
 
@@ -1829,7 +1832,7 @@ body.sidebar-open {
 }
 
 /* ==========================================================
-   ZENITH OX v5.0 — Premium UI Refresh Overrides
+   ZENITH OX v2.6 — Premium UI
    Inspired by the supplied Zenith OX mockups.
    ========================================================== */
 
@@ -2485,6 +2488,8 @@ body.workspace-page {
   gap: 20px;
   min-height: 100vh;
   padding: 22px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dashboard-sidebar,
@@ -2837,6 +2842,7 @@ body.workspace-page {
   border: 1px solid rgba(166,183,255,0.12);
   box-shadow: var(--shadow);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .rail-card--workspace {
@@ -2961,11 +2967,24 @@ body.workspace-page {
     display: none;
   }
 
+  .site-header__actions {
+    gap: 8px;
+  }
+
+  .site-header__actions .btn-primary,
+  .site-header__actions .btn-ghost {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
   .auth-shell {
     grid-template-columns: 1fr;
   }
 
-  .auth-showcase,
+  .auth-showcase {
+    display: none;
+  }
+
   .dashboard-sidebar,
   .dashboard-rail {
     display: none;
@@ -3010,12 +3029,19 @@ body.workspace-page {
     grid-template-columns: 1fr;
     gap: 0;
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
     padding-bottom: 0;
   }
 
+  /* Allow body to scroll on mobile for the workspace page */
+  body.workspace-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
   .chat-main {
-    min-height: 100vh;
+    min-height: 100svh;
     border-radius: 28px;
   }
 
@@ -3077,7 +3103,8 @@ body.workspace-page {
   .section-heading h2,
   .dashboard-hero h1,
   .auth-showcase h1 {
-    font-size: 2.1rem;
+    font-size: clamp(1.65rem, 7vw, 2.1rem);
+    line-height: 1.12;
   }
 
   .auth-panel,
@@ -3103,7 +3130,7 @@ body.workspace-page {
 }
 
 /* ==========================================================
-   ZENITH OX v5.1 — Management pages and utility components
+   ZENITH OX v2.6 — Management pages and utility components
    ========================================================== */
 
 .icon-link-btn {
@@ -3432,7 +3459,7 @@ body.workspace-page {
 }
 
 /* ==========================================================
-   ZENITH OX v2.5 overrides
+   ZENITH OX v2.6 overrides
    ========================================================== */
 .chat-main--v25 {
   background: radial-gradient(circle at top, rgba(88, 101, 242, 0.08), transparent 30%), transparent;
