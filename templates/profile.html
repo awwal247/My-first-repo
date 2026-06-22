@@ -1,12 +1,106 @@
-{% extends "base.html" %}
-{% block title %}Profile — Zenith OX{% endblock %}
-{% block content %}
-<div class="page-content p-6">
-  <div class="page-header mb-6"><h1 class="page-title">👤 Profile</h1></div>
-  <div class="glass-card profile-card">
-    <div class="profile-avatar">{{ username[0]|upper }}</div>
-    <h2 class="profile-name">{{ username }}</h2>
-    {% if user_email %}<p class="muted-text">{{ user_email }}</p>{% endif %}
-  </div>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith OX — Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-page">
+    <div class="dashboard-shell dashboard-shell--two-col">
+        <aside class="dashboard-sidebar">
+            <a href="{{ url_for('main.menu') }}" class="brand-mark">
+                <span class="brand-mark__orb"></span>
+                <span><strong>Zenith OX</strong><small>Neural workspace</small></span>
+            </a>
+            <nav class="dashboard-nav">
+                <a href="{{ url_for('main.menu') }}">Overview</a>
+                <a href="{{ url_for('main.profile') }}" class="is-active">Profile</a>
+                <a href="{{ url_for('main.settings') }}">Settings</a>
+                <a href="{{ url_for('main.files_page') }}">Files</a>
+                <a href="{{ url_for('main.history_center') }}">History</a>
+                <a href="{{ url_for('main.notifications_page') }}">Notifications{% if unread_notifications %} · {{ unread_notifications }}{% endif %}</a>
+            </nav>
+        </aside>
+
+        <main class="management-main">
+            <section class="management-header">
+                <span class="eyebrow-pill">Profile center</span>
+                <h1>{{ username }}</h1>
+                <p>Manage your public workspace identity and keep your account details up to date.</p>
+            </section>
+
+            {% with messages=get_flashed_messages(with_categories=true) %}
+            {% for category,msg in messages %}
+            <div class="alert alert-{{ category }}">{{ msg }}</div>
+            {% endfor %}
+            {% endwith %}
+
+            <div class="management-grid">
+                <section class="page-card profile-hero-card">
+                    <div class="profile-avatar" style="background: {{ user.avatar_color or '#7c5cff' }};">{{ username[:1]|upper }}</div>
+                    <div>
+                        <h2>{{ user.display_name }}</h2>
+                        <p>{{ user.email }}</p>
+                        <span class="page-card__meta">Member since {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'recently' }}</span>
+                    </div>
+                </section>
+
+                <section class="page-card">
+                    <h3>Edit profile</h3>
+                    <form method="POST" class="settings-form">
+                        <label>Display name</label>
+                        <input type="text" name="display_name" value="{{ user.display_name }}" required>
+
+                        <label>Bio</label>
+                        <textarea name="bio" rows="5" placeholder="A short description of how you use Zenith OX">{{ user.bio or '' }}</textarea>
+
+                        <label>Avatar accent</label>
+                        <input type="color" name="avatar_color" value="{{ user.avatar_color or '#7c5cff' }}" class="color-picker">
+
+                        <button type="submit" class="btn-primary btn-primary--block">Save profile</button>
+                    </form>
+                </section>
+            </div>
+
+            <div class="management-grid management-grid--secondary">
+                <section class="page-card">
+                    <h3>Workspace snapshot</h3>
+                    <div class="stat-list">
+                        <div><strong>{{ dashboard_summary.chat_count or 0 }}</strong><span>Total chats</span></div>
+                        <div><strong>{{ dashboard_summary.memory_count or 0 }}</strong><span>Memory entries</span></div>
+                        <div><strong>{{ dashboard_summary.file_count or 0 }}</strong><span>Stored files</span></div>
+                    </div>
+                </section>
+
+                <section class="page-card danger-card">
+                    <h3>Danger zone</h3>
+                    <p>Deleting your account removes chats, files, notifications, and profile data permanently.</p>
+                    <button type="button" class="btn-secondary btn-secondary--danger" id="deleteAccountBtn">Delete account</button>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+            const confirmText = prompt('Type DELETE to permanently remove your account.');
+            if (confirmText !== 'DELETE') return;
+            const res = await fetch('/delete-account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirm: 'DELETE' })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                window.location.href = '/login';
+            } else {
+                alert(data.error || 'Could not delete account.');
+            }
+        });
+    </script>
+</body>
+</html>

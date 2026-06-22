@@ -3,87 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX — Create Account</title>
+    <title>Zenith OX — Register</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="auth-page">
-    <div class="auth-bg">
-        <div class="auth-glow auth-glow-1"></div>
-        <div class="auth-glow auth-glow-2"></div>
-    </div>
-    <div class="auth-container">
-        <div class="auth-logo">
-            <div class="logo-icon">&#9711;</div>
-            <span class="logo-text">ZENITH OX</span>
-        </div>
-        <h1 class="auth-title">Create your account</h1>
-        <p class="auth-subtitle">Join us and start your journey</p>
+    <main class="auth-shell auth-shell--single">
+        <section class="auth-showcase auth-showcase--register">
+            <span class="eyebrow-pill">Create your account</span>
+            <h1>Join a workspace built for research, code, creativity, and AI-powered productivity.</h1>
+            <p>Start with a modern dashboard, premium chat workspace, and room to expand into files, settings, and collaborative flows.</p>
+            <div class="auth-showcase__grid">
+                <article>
+                    <strong>Mode-aware UX</strong>
+                    <span>Developer, Researcher, Writer, Solver, Email, Slides</span>
+                </article>
+                <article>
+                    <strong>Upload ready</strong>
+                    <span>Documents, code ZIPs, images, and richer toolchains</span>
+                </article>
+                <article>
+                    <strong>Future-proof UI</strong>
+                    <span>Dashboard, settings, profile, history, and notifications patterns</span>
+                </article>
+            </div>
+        </section>
 
-        {% with messages=get_flashed_messages(with_categories=true) %}
-        {% for category, msg in messages %}
-        <div class="alert alert-{{ category }}">{{ msg }}</div>
-        {% endfor %}
-        {% endwith %}
-
-        <form method="POST" action="/register" class="auth-form">
-            <div class="auth-field">
-                <span class="field-icon">&#128100;</span>
-                <input type="text" name="name" placeholder="Full name" required autocomplete="name">
-            </div>
-            <div class="auth-field">
-                <span class="field-icon">&#9993;</span>
-                <input type="email" name="email" placeholder="Email address" required autocomplete="email">
-            </div>
-            <div class="auth-field">
-                <span class="field-icon">&#128274;</span>
-                <input type="password" name="password" id="regPassword" placeholder="Password" required minlength="6" autocomplete="new-password" oninput="checkStrength(this.value)">
-                <button type="button" class="field-toggle" onclick="togglePwd('regPassword', this)" tabindex="-1">&#128065;</button>
-            </div>
-            <div class="pwd-strength-wrap">
-                <div class="pwd-strength-bar">
-                    <div class="pwd-strength-fill" id="pwdBar"></div>
+        <section class="auth-panel">
+            <div class="auth-panel__header">
+                <a href="/" class="brand-mark brand-mark--compact">
+                    <span class="brand-mark__orb"></span>
+                    <span><strong>Zenith OX</strong><small>Neural workspace</small></span>
+                </a>
+                <div>
+                    <h2>Create account</h2>
+                    <p>Set up your workspace in under a minute.</p>
                 </div>
-                <span class="pwd-strength-label" id="pwdLabel"></span>
             </div>
-            <div class="auth-field">
-                <span class="field-icon">&#128274;</span>
-                <input type="password" name="confirm" placeholder="Confirm password" required autocomplete="new-password">
+
+            {% with messages=get_flashed_messages(with_categories=true) %}
+            {% for category,msg in messages %}
+            <div class="alert alert-{{ category }}">{{ msg }}</div>
+            {% endfor %}
+            {% endwith %}
+
+            <form method="POST" action="/register" class="auth-form" id="registerForm">
+                <label>Display name</label>
+                <div class="input-shell">
+                    <span>👤</span>
+                    <input type="text" name="name" placeholder="How should Zenith greet you" required>
+                </div>
+
+                <label>Email</label>
+                <div class="input-shell">
+                    <span>✉️</span>
+                    <input type="email" name="email" placeholder="name@company.com" required>
+                </div>
+
+                <label>Password</label>
+                <div class="input-shell">
+                    <span>🔒</span>
+                    <input type="password" name="password" id="registerPassword" placeholder="Minimum 6 characters" required minlength="6">
+                    <button type="button" class="input-toggle" data-target="registerPassword">Show</button>
+                </div>
+                <div class="password-meter">
+                    <span id="passwordStrengthBar"></span>
+                </div>
+
+                <label>Confirm password</label>
+                <div class="input-shell">
+                    <span>🛡️</span>
+                    <input type="password" name="confirm" id="confirmPassword" placeholder="Repeat your password" required>
+                    <button type="button" class="input-toggle" data-target="confirmPassword">Show</button>
+                </div>
+
+                <button type="submit" class="btn-primary btn-primary--block">Create account</button>
+            </form>
+
+            {% if google_enabled() %}
+            <div class="divider"><span>or continue with</span></div>
+            <a href="/login/google" class="google-btn">Google OAuth</a>
+            {% endif %}
+
+            <div class="auth-footer-links">
+                <p>Already have an account? <a href="/login">Sign in</a></p>
             </div>
-            <button type="submit" class="auth-submit-btn">Create account</button>
-        </form>
+        </section>
+    </main>
 
-        {% if google_enabled() %}
-        <div class="auth-divider"><span>or continue with</span></div>
-        <a href="/login/google" class="google-btn">
-            <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-            Continue with Google
-        </a>
-        {% endif %}
-
-        <p class="auth-switch">Already have an account? <a href="/login">Sign in</a></p>
-    </div>
     <script>
-    function togglePwd(id, btn) {
-        var el = document.getElementById(id);
-        if (el.type === 'password') { el.type = 'text'; btn.innerHTML = '&#128584;'; }
-        else { el.type = 'password'; btn.innerHTML = '&#128065;'; }
-    }
-    function checkStrength(val) {
-        var bar = document.getElementById('pwdBar');
-        var label = document.getElementById('pwdLabel');
-        if (!bar) return;
-        var score = 0;
-        if (val.length >= 6) score++;
-        if (val.length >= 10) score++;
-        if (/[A-Z]/.test(val)) score++;
-        if (/[0-9]/.test(val)) score++;
-        if (/[^A-Za-z0-9]/.test(val)) score++;
-        var pct = (score / 5) * 100;
-        bar.style.width = pct + '%';
-        if (score <= 1) { bar.style.background = '#ef4444'; label.textContent = 'Weak'; label.style.color = '#ef4444'; }
-        else if (score <= 3) { bar.style.background = '#f59e0b'; label.textContent = 'Fair'; label.style.color = '#f59e0b'; }
-        else { bar.style.background = '#22c55e'; label.textContent = 'Strong'; label.style.color = '#22c55e'; }
-    }
+        document.querySelectorAll('.input-toggle').forEach((button) => {
+            button.addEventListener('click', () => {
+                const input = document.getElementById(button.dataset.target);
+                if (!input) return;
+                const nextType = input.type === 'password' ? 'text' : 'password';
+                input.type = nextType;
+                button.textContent = nextType === 'password' ? 'Show' : 'Hide';
+            });
+        });
+
+        const passwordInput = document.getElementById('registerPassword');
+        const strengthBar = document.getElementById('passwordStrengthBar');
+        if (passwordInput && strengthBar) {
+            passwordInput.addEventListener('input', () => {
+                const value = passwordInput.value.length;
+                let width = '16%';
+                let color = '#ef4444';
+                if (value >= 6) { width = '45%'; color = '#f59e0b'; }
+                if (value >= 10) { width = '72%'; color = '#38bdf8'; }
+                if (value >= 14) { width = '100%'; color = '#22c55e'; }
+                strengthBar.style.width = width;
+                strengthBar.style.background = color;
+            });
+        }
     </script>
 </body>
 </html>

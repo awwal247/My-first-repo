@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX — {{ mode.name }}</title>
+    <title>Zenith OX v2.5 — {{ mode.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -12,117 +15,149 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
-<body>
-    <div class="layout">
-
-        <!-- Left Sidebar -->
+<body class="workspace-page">
+    <div class="layout layout--workspace">
         <aside class="zh-sidebar" id="zh-sidebar">
-            <div class="zh-sidebar-top">
-                <div class="zh-sidebar-brand">
-                    <div class="logo-icon logo-icon-sm">&#9711;</div>
-                    <span class="logo-text">ZENITH OX</span>
+            <div class="zh-sidebar-header zh-sidebar-header--brand">
+                <div>
+                    <div class="brand-mini">Zenith OX v2.5</div>
+                    <span class="zh-sidebar-title">Conversations</span>
                 </div>
-                <button id="zh-new-chat-btn" onclick="ChatHistory.startNewChat(window.ZENITH_MODE)">
-                    <span>&#43;</span> New Chat
-                </button>
+                <button id="zh-new-chat-btn" onclick="ChatHistory.startNewChat(window.ZENITH_MODE)">+ New Chat</button>
             </div>
             <div class="zh-search-box">
-                <span class="zh-search-icon">&#128269;</span>
-                <input type="text" id="zh-search-input" placeholder="Search chats..." aria-label="Search chats">
-                <kbd class="zh-search-kbd">&#8984;K</kbd>
+                <input type="text" id="zh-search-input" placeholder="Search chats...">
             </div>
-            <div class="zh-section-label">Pinned</div>
+            <div class="workspace-sidebar-meta">
+                <span class="workspace-chip workspace-chip--solid">{{ mode.emoji }} {{ mode.name }}</span>
+                <span class="workspace-chip">v2.5 workspace</span>
+            </div>
             <div id="zh-chat-list"></div>
-            <div class="zh-sidebar-footer">
-                <div class="zh-user-row">
-                    <div class="zh-user-avatar">{{ username[0]|upper if username else 'U' }}</div>
-                    <div class="zh-user-info">
-                        <span class="zh-user-name">{{ username }}</span>
-                        <span class="zh-user-plan">Pro Plan</span>
-                    </div>
-                    <button class="zh-user-menu-btn" title="Menu">&#8943;</button>
-                </div>
+            <div class="workspace-sidebar-footer">
+                <a href="{{ url_for('main.files_page') }}">Files</a>
+                <a href="{{ url_for('main.history_center') }}">History</a>
+                <a href="{{ url_for('main.menu') }}">Dashboard</a>
+                <a href="{{ url_for('auth.logout') }}">Logout</a>
             </div>
         </aside>
         <div class="zh-backdrop" id="zh-backdrop"></div>
 
-        <!-- Main Chat -->
-        <main class="chat-main">
-
-            <!-- Top bar -->
-            <div class="top-bar">
-                <div class="top-bar-left">
-                    <button class="zh-sidebar-toggle-btn" id="zh-sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
-                    <div class="model-pill">
-                        <span class="model-pill-dot"></span>
-                        GPT-4o via OpenRouter
-                        <span class="model-pill-arrow">&#8964;</span>
-                    </div>
-                    <div class="mode-badge" id="modeIndicator">
-                        <span class="mode-emoji">{{ mode.emoji }}</span>
-                        <span>{{ mode.name }}</span>
-                        <span class="mode-badge-arrow">&#8964;</span>
+        <main class="chat-main chat-main--v25">
+            <div class="top-bar top-bar--workspace top-bar--workspace-v25">
+                <div class="top-bar-left top-bar-left--workspace">
+                    <button class="zh-sidebar-toggle-btn" id="zh-sidebar-toggle">☰</button>
+                    <div>
+                        <div class="top-label">Standard workspace</div>
+                        <div id="modeIndicator">
+                            <span class="mode-emoji">{{ mode.emoji }}</span>
+                            <span>{{ mode.name }}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="top-bar-actions">
-                    <button class="icon-btn" id="memoryBtn" title="Memory sidebar">&#129504;</button>
-                    <button class="icon-btn" id="exportBtn" title="Export chat">&#128229;</button>
+                <div class="top-bar-actions top-bar-actions--workspace">
+                    <div class="workspace-model-pill">
+                        <label for="modelSelect">Model</label>
+                        <select id="modelSelect" aria-label="Choose model">
+                            {% for key, item in available_chat_models.items() %}
+                            <option value="{{ key }}" {% if key == selected_chat_model_key %}selected{% endif %}>{{ item.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <a class="icon-link-btn" href="{{ url_for('main.notifications_page') }}" title="Notifications">🔔{% if unread_notifications %}<span class="icon-counter">{{ unread_notifications }}</span>{% endif %}</a>
+                    <a class="icon-link-btn" href="{{ url_for('main.files_page') }}" title="Files">🗂️{% if file_count %}<span class="icon-counter">{{ file_count }}</span>{% endif %}</a>
+                    <button class="icon-btn" id="memoryBtn" title="Memory sidebar">🧠</button>
+                    <button class="icon-btn" id="exportBtn" title="Export chat">📥</button>
                     <div class="export-dropdown" id="exportDropdown">
                         <button data-format="md">Markdown</button>
                         <button data-format="txt">Text</button>
                         <button data-format="json">JSON</button>
                     </div>
-                    <button class="icon-btn" id="regenerateBtn" title="Regenerate">&#8635;</button>
-                    <button class="icon-btn" id="clearBtn" title="Clear memory">&#128465;</button>
-                    <button class="icon-btn" id="logoutBtn" title="Logout">&#8651;</button>
+                    <button class="icon-btn" id="regenerateBtn" title="Regenerate">🔄</button>
+                    <button class="icon-btn" id="clearBtn" title="Clear memory">🗑️</button>
+                    <button class="icon-btn" id="logoutBtn" title="Logout">⎋</button>
                 </div>
             </div>
 
-            <!-- Chat messages -->
             <div id="chat-box">
-                <div class="message bot welcome">
+                <div class="message bot welcome welcome-panel">
+                    <div class="welcome-panel__eyebrow">Workspace ready</div>
                     <h2>{{ mode.emoji }} {{ mode.name }}</h2>
-                    <p><strong>{{ greeting }}</strong> &#128075;</p>
-                    <p>You are in <strong>{{ mode.name }}</strong> mode.</p>
-                    <p>{{ mode.tagline }}</p>
-                    <p>Type a message below or upload files to get started.</p>
+                    <p><strong>{{ greeting }}</strong> — Zenith OX v2.5 now includes a standard rounded composer, visible thinking trace, import sheet, exact download naming, and model switching.</p>
+                    <div class="welcome-pill-row">
+                        <span>Thinking trace</span>
+                        <span>Bottom attach sheet</span>
+                        <span>Drive & GitHub import</span>
+                        <span>Model switcher</span>
+                        <span>Export</span>
+                    </div>
+                    <div class="welcome-grid">
+                        <article>
+                            <strong>Ask directly</strong>
+                            <p>Send research, code, writing, and workspace requests from the upgraded rounded prompt area.</p>
+                        </article>
+                        <article>
+                            <strong>Attach from anywhere</strong>
+                            <p>Use camera, photos, files, Google Drive links, GitHub links, and code project upload from one place.</p>
+                        </article>
+                    </div>
                 </div>
             </div>
-            <button id="scrollToBottomBtn" class="scroll-to-bottom-btn hidden" title="Scroll to latest">&#8595;</button>
+            <button id="scrollToBottomBtn" class="scroll-to-bottom-btn hidden" title="Scroll to latest">⬇</button>
 
-            <!-- Input area -->
-            <div class="input-area">
+            <div class="input-area input-area--workspace input-area--workspace-v25">
                 <div id="file-preview" class="hidden"></div>
-                <div class="file-actions">
-                    <button class="file-btn" id="fileBtn">&#128206; Attach files</button>
-                    {% if mode_key == 'developer' %}
-                    <button class="file-btn" id="uploadCodeBtn">&#128230; Upload code project</button>
-                    {% endif %}
-                </div>
-                <div class="input-row">
-                    <button class="input-attach-btn" id="fileBtnInline" title="Attach">&#128206;</button>
-                    <form id="chatForm">
-                        <textarea id="user-input" placeholder="Ask Zenith anything..." rows="1"></textarea>
-                    </form>
-                    <button id="micBtn" title="Voice input" aria-label="Voice input">&#127908;</button>
-                    <button id="sendBtn" title="Send" aria-label="Send">&#10148;</button>
-                </div>
-                <div class="bottom-toolbar">
-                    <div class="toolbar-left">
-                        <span id="fileCount"></span>
+                <div class="composer-shell">
+                    <div class="input-row input-row--workspace input-row--workspace-v25">
+                        <button id="composerPlusBtn" class="composer-plus-btn" title="Add attachment" aria-label="Add attachment">+</button>
+                        <form id="chatForm">
+                            <textarea id="user-input" placeholder="Message {{ mode.name }}..." rows="1"></textarea>
+                        </form>
+                        <button id="micBtn" title="Voice input" aria-label="Voice input">🎤</button>
+                        <button id="sendBtn" title="Send" aria-label="Send">↑</button>
                     </div>
-                    <div class="toolbar-right">
-                        <span class="toolbar-hint">Shift+Enter for new line</span>
+                    <div class="bottom-toolbar bottom-toolbar--workspace bottom-toolbar--workspace-v25">
+                        <div class="toolbar-left toolbar-left--v25">
+                            <span id="fileCount"></span>
+                            <span class="toolbar-divider"></span>
+                            <span id="modelStatus">{{ available_chat_models[selected_chat_model_key].label }}</span>
+                        </div>
+                        <div class="toolbar-right toolbar-right--v25">
+                            <span class="toolbar-hint">Enter to send · Shift+Enter for new line</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <!-- Memory Sidebar -->
+        <aside class="workspace-rail workspace-rail--v25">
+            <section class="rail-card rail-card--workspace">
+                <span class="rail-card__eyebrow">Mode context</span>
+                <h3>{{ mode.name }}</h3>
+                <p>{{ mode.tagline }}</p>
+            </section>
+            <section class="rail-card rail-card--workspace">
+                <span class="rail-card__eyebrow">What changed in v2.5</span>
+                <div class="mini-list">
+                    <div class="mini-list__item"><strong>Prompt redesign</strong><span>Rounded, popular-AI style composer with inline plus button.</span></div>
+                    <div class="mini-list__item"><strong>Thinking trace</strong><span>A visible pre-response status appears in the conversation before the answer lands.</span></div>
+                    <div class="mini-list__item"><strong>Real imports</strong><span>Google Drive and GitHub public links can be pulled straight into the pending attachments queue.</span></div>
+                    <div class="mini-list__item"><strong>Model control</strong><span>Switch between Meta Llama, GPT OSS 120B, Gemini Flash, and Gemini Pro from the workspace.</span></div>
+                </div>
+            </section>
+            <section class="rail-card rail-card--workspace">
+                <span class="rail-card__eyebrow">Keyboard</span>
+                <ul>
+                    <li>Ctrl/Cmd + K → focus chat search</li>
+                    <li>Esc → close sidebars and sheets</li>
+                    <li>Enter → send the current message</li>
+                </ul>
+            </section>
+        </aside>
+
         <aside class="memory-sidebar" id="memorySidebar">
             <div class="sidebar-header">
-                <h3>&#129504; Memory</h3>
-                <button id="sidebarClose">&#10005;</button>
+                <h3>🧠 Memory</h3>
+                <button id="sidebarClose">✕</button>
             </div>
             <div id="sidebarBody"></div>
             <div id="sidebarEmpty">No memory yet. Start chatting!</div>
@@ -130,19 +165,49 @@
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
     </div>
 
+    <div class="attach-sheet-overlay" id="attachSheetOverlay"></div>
+    <section class="attach-sheet" id="attachSheet" aria-hidden="true">
+        <div class="attach-sheet__grab"></div>
+        <div class="attach-sheet__header">
+            <div>
+                <strong>Add to prompt</strong>
+                <p>Choose how you want to attach content</p>
+            </div>
+            <button class="attach-sheet__close" id="attachSheetClose" aria-label="Close attach panel">✕</button>
+        </div>
+        <div class="attach-sheet__grid">
+            <button class="attach-option-btn" data-attach-action="camera"><span>📷</span><strong>Camera</strong></button>
+            <button class="attach-option-btn" data-attach-action="photo"><span>🖼️</span><strong>Photo</strong></button>
+            <button class="attach-option-btn" data-attach-action="file"><span>📁</span><strong>Files</strong></button>
+            <button class="attach-option-btn" data-attach-action="gdrive"><span>☁️</span><strong>Google Drive</strong></button>
+            <button class="attach-option-btn" data-attach-action="github"><span>🐙</span><strong>GitHub</strong></button>
+            {% if mode_key == 'developer' %}
+            <button class="attach-option-btn" data-attach-action="code"><span>📦</span><strong>Code ZIP</strong></button>
+            {% endif %}
+        </div>
+        <div class="attach-import-panel hidden" id="attachImportPanel">
+            <label id="attachImportLabel" for="attachImportUrl">Paste public link</label>
+            <input id="attachImportUrl" type="url" placeholder="https://...">
+            <div class="attach-import-actions">
+                <button id="attachImportConfirm" class="btn-primary" data-provider="">Import</button>
+                <button id="attachImportCancel" class="btn-secondary" type="button">Cancel</button>
+            </div>
+            <p class="attach-import-note" id="attachImportNote">Google Drive and GitHub imports support public links.</p>
+        </div>
+    </section>
+
     <div class="toast-container" id="toastContainer"></div>
 
-    <input type="file" id="fileInput" multiple style="display:none">
+    <input type="file" id="fileInput" multiple hidden>
+    <input type="file" id="photoInput" accept="image/*" multiple hidden>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
     {% if mode_key == 'developer' %}
-    <input type="file" id="codeInput" accept=".zip,.rar" style="display:none">
+    <input type="file" id="codeInput" accept=".zip,.rar" hidden>
     {% endif %}
 
-    <script>window.ZENITH_MODE = "{{ mode_key }}";</script>
     <script>
-    // Wire inline attach button to the same file input
-    document.getElementById('fileBtnInline') && document.getElementById('fileBtnInline').addEventListener('click', function() {
-        document.getElementById('fileInput').click();
-    });
+        window.ZENITH_MODE = "{{ mode_key }}";
+        window.ZENITH_SELECTED_MODEL = "{{ selected_chat_model_key }}";
     </script>
     <script src="{{ url_for('static', filename='js/chat_history_redesign.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

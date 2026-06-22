@@ -1,8 +1,84 @@
-{% extends "base.html" %}
-{% block title %}Notifications — Zenith OX{% endblock %}
-{% block content %}
-<div class="page-content p-6">
-  <div class="page-header mb-6"><h1 class="page-title">🔔 Notifications</h1></div>
-  <div class="glass-card"><p class="muted-text">No notifications yet.</p></div>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith OX — Notifications</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-page">
+    <div class="dashboard-shell dashboard-shell--two-col">
+        <aside class="dashboard-sidebar">
+            <a href="{{ url_for('main.menu') }}" class="brand-mark">
+                <span class="brand-mark__orb"></span>
+                <span><strong>Zenith OX</strong><small>Neural workspace</small></span>
+            </a>
+            <nav class="dashboard-nav">
+                <a href="{{ url_for('main.menu') }}">Overview</a>
+                <a href="{{ url_for('main.profile') }}">Profile</a>
+                <a href="{{ url_for('main.settings') }}">Settings</a>
+                <a href="{{ url_for('main.files_page') }}">Files</a>
+                <a href="{{ url_for('main.history_center') }}">History</a>
+                <a href="{{ url_for('main.notifications_page') }}" class="is-active">Notifications{% if unread_notifications %} · {{ unread_notifications }}{% endif %}</a>
+            </nav>
+        </aside>
+
+        <main class="management-main">
+            <section class="management-header">
+                <span class="eyebrow-pill">Notification center</span>
+                <h1>Workspace events and account activity</h1>
+                <p>Review uploads, profile changes, settings updates, and other system events from your connected backend.</p>
+            </section>
+
+            {% with messages=get_flashed_messages(with_categories=true) %}
+            {% for category,msg in messages %}
+            <div class="alert alert-{{ category }}">{{ msg }}</div>
+            {% endfor %}
+            {% endwith %}
+
+            <section class="page-card">
+                <div class="section-actions">
+                    <h3>{{ notifications|length }} notification{{ '' if notifications|length == 1 else 's' }}</h3>
+                    <form method="POST">
+                        <button type="submit" name="action" value="read_all" class="btn-secondary">Mark all as read</button>
+                    </form>
+                </div>
+
+                {% if notifications %}
+                <div class="item-list">
+                    {% for notification in notifications %}
+                    <div class="item-row {% if not notification.is_read %}item-row--unread{% endif %}">
+                        <div>
+                            <strong>{{ notification.title }}</strong>
+                            <span>{{ notification.category|title }} · {{ notification.created_at.strftime('%Y-%m-%d %H:%M') if notification.created_at else '' }}</span>
+                            <p>{{ notification.body }}</p>
+                            {% if notification.action_url %}
+                            <a href="{{ notification.action_url }}" class="inline-link">Open related page</a>
+                            {% endif %}
+                        </div>
+                        <div class="item-row__actions item-row__actions--stack">
+                            {% if not notification.is_read %}
+                            <form method="POST">
+                                <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                                <button type="submit" name="action" value="read" class="btn-secondary">Mark read</button>
+                            </form>
+                            {% endif %}
+                            <form method="POST" onsubmit="return confirm('Delete this notification?');">
+                                <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                                <button type="submit" name="action" value="delete" class="btn-secondary btn-secondary--danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>No notifications yet. Actions across the workspace will appear here.</p>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

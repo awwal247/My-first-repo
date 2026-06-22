@@ -1,15 +1,92 @@
-{% extends "base.html" %}
-{% block title %}Files — Zenith OX{% endblock %}
-{% block content %}
-<div class="page-content p-6">
-  <div class="page-header mb-6">
-    <h1 class="page-title">📁 Files</h1>
-    <p class="page-sub">Upload and manage files for AI analysis.</p>
-  </div>
-  <div class="glass-card text-center p-8">
-    <div style="font-size:2.5rem;margin-bottom:1rem">📎</div>
-    <p class="muted-text mb-4">Upload PDF, DOCX, XLSX, PPTX, CSV, JSON, images, and code archives inside a chat.</p>
-    <a href="{{ url_for('main.index') }}" class="btn-primary">Go to Chat →</a>
-  </div>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith OX — Files Vault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-page">
+    <div class="dashboard-shell dashboard-shell--two-col">
+        <aside class="dashboard-sidebar">
+            <a href="{{ url_for('main.menu') }}" class="brand-mark">
+                <span class="brand-mark__orb"></span>
+                <span><strong>Zenith OX</strong><small>Neural workspace</small></span>
+            </a>
+            <nav class="dashboard-nav">
+                <a href="{{ url_for('main.menu') }}">Overview</a>
+                <a href="{{ url_for('main.profile') }}">Profile</a>
+                <a href="{{ url_for('main.settings') }}">Settings</a>
+                <a href="{{ url_for('main.files_page') }}" class="is-active">Files</a>
+                <a href="{{ url_for('main.history_center') }}">History</a>
+                <a href="{{ url_for('main.notifications_page') }}">Notifications{% if unread_notifications %} · {{ unread_notifications }}{% endif %}</a>
+            </nav>
+        </aside>
+
+        <main class="management-main">
+            <section class="management-header">
+                <span class="eyebrow-pill">Files vault</span>
+                <h1>Store and retrieve workspace files</h1>
+                <p>Upload reference documents, assets, and working files into a persistent vault connected to your account.</p>
+            </section>
+
+            {% with messages=get_flashed_messages(with_categories=true) %}
+            {% for category,msg in messages %}
+            <div class="alert alert-{{ category }}">{{ msg }}</div>
+            {% endfor %}
+            {% endwith %}
+
+            <div class="management-grid">
+                <section class="page-card">
+                    <h3>Upload a file</h3>
+                    <form method="POST" enctype="multipart/form-data" class="settings-form">
+                        <label>File</label>
+                        <input type="file" name="file" required>
+                        <label>Description</label>
+                        <textarea name="description" rows="4" placeholder="Optional note about how this file should be used"></textarea>
+                        <button type="submit" class="btn-primary btn-primary--block">Upload to vault</button>
+                    </form>
+                    <p class="page-card__meta">Max file size: 10 MB per upload.</p>
+                </section>
+
+                <section class="page-card">
+                    <h3>Vault summary</h3>
+                    <div class="stat-list stat-list--wide">
+                        <div><strong>{{ files|length }}</strong><span>Stored files</span></div>
+                        <div><strong>{{ '%.1f'|format((total_bytes or 0) / 1024) }}</strong><span>Total KB stored</span></div>
+                        <div><strong>{{ dashboard_summary.file_count or 0 }}</strong><span>Backend-backed records</span></div>
+                    </div>
+                </section>
+            </div>
+
+            <section class="page-card">
+                <h3>Stored files</h3>
+                {% if files %}
+                <div class="item-list">
+                    {% for item in files %}
+                    <div class="item-row">
+                        <div>
+                            <strong>{{ item.filename }}</strong>
+                            <span>{{ item.content_type }} · {{ '%.1f'|format((item.size_bytes or 0) / 1024) }} KB · {{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else '' }}</span>
+                            {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+                        </div>
+                        <div class="item-row__actions">
+                            <a href="{{ url_for('main.download_user_file', file_id=item.id) }}" class="btn-secondary">Download</a>
+                            <form method="POST" action="{{ url_for('main.delete_user_file', file_id=item.id) }}" onsubmit="return confirm('Delete this file from your vault?');">
+                                <button type="submit" class="btn-secondary btn-secondary--danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>No files stored yet. Upload the first file to make this vault active.</p>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

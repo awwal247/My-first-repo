@@ -1,7 +1,6 @@
 /* ==========================================================
-   ZENITH OX v4.0 -- Chat UI
-   Features: Typewriter, Multi-file, Voice, Dark Mode, Export,
-   Regenerate, Edit, Charts, Memory Sidebar
+   ZENITH OX v2.5 — Workspace Chat UI
+   Rounded composer, thinking trace, import sheet, model switcher
    ========================================================== */
 (() => {
   const chatBox = document.getElementById("chat-box");
@@ -15,579 +14,949 @@
   const exportDropdown = document.getElementById("exportDropdown");
   const regenerateBtn = document.getElementById("regenerateBtn");
   const fileInput = document.getElementById("fileInput");
-  const fileBtn = document.getElementById("fileBtn");
+  const photoInput = document.getElementById("photoInput");
+  const cameraInput = document.getElementById("cameraInput");
+  const codeInput = document.getElementById("codeInput");
   const filePreview = document.getElementById("file-preview");
   const fileCount = document.getElementById("fileCount");
   const toastContainer = document.getElementById("toastContainer");
+  const composerPlusBtn = document.getElementById("composerPlusBtn");
+  const attachSheet = document.getElementById("attachSheet");
+  const attachSheetOverlay = document.getElementById("attachSheetOverlay");
+  const attachSheetClose = document.getElementById("attachSheetClose");
+  const attachImportPanel = document.getElementById("attachImportPanel");
+  const attachImportLabel = document.getElementById("attachImportLabel");
+  const attachImportUrl = document.getElementById("attachImportUrl");
+  const attachImportNote = document.getElementById("attachImportNote");
+  const attachImportConfirm = document.getElementById("attachImportConfirm");
+  const attachImportCancel = document.getElementById("attachImportCancel");
+  const modelSelect = document.getElementById("modelSelect");
+  const modelStatus = document.getElementById("modelStatus");
 
-  /* -- marked.js config -- */
-  const renderer = new marked.Renderer();
+  const MODEL_STORAGE_KEY = "zenith:selected-model";
+  const THINK_MIN_MS = 1600;
   const FILE_RE = new RegExp("^(?:#|//|/\\s*\\*\\*|<!--)?\\s*File:\\s*(.+?)\\s*(?:\\*/|-->)?$", "i");
+  const THINK_STEPS = {
+    developer: ["run cat", "run touch", "run nano", "review schema", "shape patch"],
+    researcher: ["scan context", "rank sources", "trace facts", "draft answer"],
+    story_writer: ["shape tone", "build scene", "refine rhythm", "tighten prose"],
+    solve_it: ["parse problem", "set steps", "check math", "verify answer"],
+    email_writer: ["read request", "set tone", "draft email", "polish copy"],
+    default: ["read prompt", "plan reply", "draft response", "final check"],
+  };
 
+  const renderer = new marked.Renderer();
   renderer.code = function({ text, lang }) {
-    const code=text||"", language=lang||"plaintext";
-    let filename=null, cleanCode=code;
-    const lines=code.split("\n");
-    if(lines.length>0){const m=lines[0].trim().match(FILE_RE);if(m){filename=m[1].trim();cleanCode=lines.slice(1).join("\n").trim();}}
+    const code = text || "";
+    const language = lang || "plaintext";
+    let filename = null;
+    let cleanCode = code;
+    const lines = code.split("\n");
+    if (lines.length > 0) {
+      const match = lines[0].trim().match(FILE_RE);
+      if (match) {
+        filename = match[1].trim();
+        cleanCode = lines.slice(1).join("\n").trim();
+      }
+    }
     let hl;
-    try{hl=hljs.getLanguage(language)?hljs.highlight(cleanCode,{language}).value:hljs.highlightAuto(cleanCode).value;}
-    catch(e){hl=cleanCode.replace(/</g,"<").replace(/>/g,">");}
-    const label=filename?"📄 "+filename:language;
-    return'<div class="code-block-wrapper">'+
-      '<div class="code-header"><span class="code-lang">'+label+'</span><button class="copy-btn" onclick="copyCode(this)" data-code="'+btoa(unescape(encodeURIComponent(cleanCode)))+'">Copy</button></div>'+
-      '<pre><code class="hljs '+language+'">'+hl+'</code></pre>'+
-    '</div>';
+    try {
+      hl = hljs.getLanguage(language)
+        ? hljs.highlight(cleanCode, { language }).value
+        : hljs.highlightAuto(cleanCode).value;
+    } catch (e) {
+      hl = cleanCode.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    const label = filename ? `📄 ${filename}` : language;
+    return `<div class="code-block-wrapper"><div class="code-header"><span class="code-lang">${label}</span><button class="copy-btn" onclick="copyCode(this)" data-code="${btoa(unescape(encodeURIComponent(cleanCode)))}">Copy</button></div><pre><code class="hljs ${language}">${hl}</code></pre></div>`;
   };
-  marked.setOptions({renderer,breaks:true,gfm:true});
+  marked.setOptions({ renderer, breaks: true, gfm: true });
 
-  window.copyCode=function(btn){
-    const code=decodeURIComponent(escape(atob(btn.dataset.code)));
-    navigator.clipboard.writeText(code).then(()=>{btn.textContent="Copied!";setTimeout(()=>{btn.textContent="Copy";},2000);});
-  };
-
-  /* -- textarea auto-resize -- */
-  input.addEventListener("input",()=>{input.style.height="auto";input.style.height=Math.min(input.scrollHeight,150)+"px";});
-  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit?form.requestSubmit():form.dispatchEvent(new Event("submit",{cancelable:true}));}});
-
-  /* -- Send button --
-     sendBtn lives outside <chatForm> (next to it in the input row) so it
-     has no native submit behaviour. Wire it explicitly so pressing the
-     Send button (not just the Enter key) always triggers a response. */
-  sendBtn.addEventListener("click",e=>{
-    e.preventDefault();
-    if(form.requestSubmit)form.requestSubmit();
-    else form.dispatchEvent(new Event("submit",{cancelable:true}));
-  });
-
-  /* -- Multi-file upload -- */
-  let pendingFiles=[];
-  fileBtn.addEventListener("click",()=>fileInput.click());
-  fileInput.addEventListener("change",()=>{
-    const files=Array.from(fileInput.files);
-    if(!files.length)return;
-    // v4.1: append newly-picked files to any already-pending ones so users
-    // can attach multiple files across separate "Attach files" picks,
-    // instead of the new selection wiping out the previous one.
-    files.forEach(f=>{
-      const dup=pendingFiles.some(p=>p.name===f.name&&p.size===f.size&&p.lastModified===f.lastModified);
-      if(!dup)pendingFiles.push(f);
+  window.copyCode = function(btn) {
+    const code = decodeURIComponent(escape(atob(btn.dataset.code)));
+    navigator.clipboard.writeText(code).then(() => {
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = "Copy"; }, 1600);
     });
-    renderFilePreview();
-    fileInput.value="";
-  });
+  };
 
-  function renderFilePreview(){
-    if(!pendingFiles.length){filePreview.classList.add("hidden");fileCount.textContent="";return;}
-    filePreview.classList.remove("hidden");
-    filePreview.innerHTML=pendingFiles.map((f,i)=>
-      '<span class="file-tag">📎 '+esc(f.name)+' ('+(f.size/1024).toFixed(1)+' KB)'+
-      '<button data-index="'+i+'">✕</button></span>'
-    ).join("");
-    fileCount.textContent=pendingFiles.length+" file"+(pendingFiles.length>1?"s":"")+" selected";
-    filePreview.querySelectorAll("button").forEach(btn=>{
-      btn.addEventListener("click",()=>{
-        const idx=parseInt(btn.dataset.index);
-        pendingFiles.splice(idx,1);
-        renderFilePreview();
+  let pendingFiles = [];
+
+  function esc(value) {
+    return (value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function currentModelKey() {
+    return (modelSelect && modelSelect.value) || window.ZENITH_SELECTED_MODEL || "llama_versatile_31";
+  }
+
+  function updateModelStatus() {
+    if (!modelSelect || !modelStatus) return;
+    const label = modelSelect.options[modelSelect.selectedIndex]?.textContent || currentModelKey();
+    modelStatus.textContent = label;
+  }
+
+  function bootModelSelection() {
+    if (!modelSelect) return;
+    const saved = localStorage.getItem(MODEL_STORAGE_KEY);
+    const boot = saved || window.ZENITH_SELECTED_MODEL;
+    if (boot && Array.from(modelSelect.options).some(opt => opt.value === boot)) {
+      modelSelect.value = boot;
+    }
+    updateModelStatus();
+    modelSelect.addEventListener("change", () => {
+      localStorage.setItem(MODEL_STORAGE_KEY, modelSelect.value);
+      updateModelStatus();
+      showToast(`Model set to ${modelSelect.options[modelSelect.selectedIndex].textContent}`, "info");
+    });
+  }
+
+  function renderMath(el) {
+    if (window.renderMathInElement) {
+      renderMathInElement(el, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false },
+          { left: "\\(", right: "\\)", display: false },
+          { left: "\\[", right: "\\]", display: true },
+        ],
+        throwOnError: false,
       });
-    });
+    }
   }
 
-  /* -- helpers -- */
-  function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-
-  function addMessage(text,cls){
-    const d=document.createElement("div");d.className="message "+(cls||"bot");
-    if(cls&&cls.includes("user"))d.textContent=text;
-    else d.innerHTML=text;
-    chatBox.appendChild(d);chatBox.scrollTop=chatBox.scrollHeight;return d;
+  function addMessage(text, cls) {
+    const d = document.createElement("div");
+    d.className = `message ${cls || "bot"}`;
+    if (cls && cls.includes("user")) d.textContent = text;
+    else d.innerHTML = text;
+    chatBox.appendChild(d);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return d;
   }
 
-  function addFileIndicator(filename){
-    const d=document.createElement("div");d.className="message user file-indicator";
-    d.innerHTML='📎 '+esc(filename);
-    chatBox.appendChild(d);chatBox.scrollTop=chatBox.scrollHeight;
+  function addFileIndicator(filename) {
+    const d = document.createElement("div");
+    d.className = "message user file-indicator";
+    d.innerHTML = `📎 ${esc(filename)}`;
+    chatBox.appendChild(d);
+    chatBox.scrollTop = chatBox.scrollHeight;
   }
 
-  function addTyping(){
-    const d=document.createElement("div");d.className="message bot";
-    d.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
-    chatBox.appendChild(d);chatBox.scrollTop=chatBox.scrollHeight;return d;
-  }
-
-  function renderMath(el){
-    if(window.renderMathInElement)renderMathInElement(el,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\(",right:"\)",display:false},{left:"\[",right:"\]",display:true}],throwOnError:false});
-  }
-
-  function addCopyBtn(wrapper,txt){
-    const btn=document.createElement("button");btn.className="msg-copy-btn";btn.title="Copy response";
-    btn.innerHTML='📋';
-    btn.addEventListener("click",()=>{
-      navigator.clipboard.writeText(txt).then(()=>{
-        btn.innerHTML='✓';
-        setTimeout(()=>{btn.innerHTML='📋';},2000);
+  function addCopyBtn(wrapper, txt) {
+    const btn = document.createElement("button");
+    btn.className = "msg-copy-btn";
+    btn.title = "Copy response";
+    btn.innerHTML = "📋";
+    btn.addEventListener("click", () => {
+      navigator.clipboard.writeText(txt).then(() => {
+        btn.innerHTML = "✓";
+        setTimeout(() => { btn.innerHTML = "📋"; }, 1600);
       });
     });
     wrapper.appendChild(btn);
   }
 
-  /* -- Message action buttons (regenerate, edit) -- */
-  function addMsgActions(wrapper, userText, botText){
-    const actions=document.createElement("div");actions.className="msg-actions";
+  function addMsgActions(wrapper, userText, botText) {
+    const actions = document.createElement("div");
+    actions.className = "msg-actions";
 
-    const regenBtn=document.createElement("button");regenBtn.className="msg-action-btn";
-    regenBtn.innerHTML='🔄 Regenerate';
-    regenBtn.addEventListener("click",()=>{doRegenerate();});
+    const regenBtn = document.createElement("button");
+    regenBtn.className = "msg-action-btn";
+    regenBtn.innerHTML = "🔄 Regenerate";
+    regenBtn.addEventListener("click", () => doRegenerate());
     actions.appendChild(regenBtn);
 
-    const editBtn=document.createElement("button");editBtn.className="msg-action-btn";
-    editBtn.innerHTML='✏️ Edit';
-    editBtn.addEventListener("click",()=>{enableEdit(wrapper,userText||botText);});
+    const editBtn = document.createElement("button");
+    editBtn.className = "msg-action-btn";
+    editBtn.innerHTML = "✏️ Edit";
+    editBtn.addEventListener("click", () => enableEdit(wrapper, userText || botText));
     actions.appendChild(editBtn);
 
     wrapper.appendChild(actions);
   }
 
-  function enableEdit(wrapper, currentText){
-    const content=wrapper.querySelector(".md-content");
-    if(!content)return;
-    const ta=document.createElement("textarea");ta.className="edit-textarea";
-    ta.value=currentText;content.innerHTML="";content.appendChild(ta);
-    const btnRow=document.createElement("div");btnRow.className="edit-actions";
-    const saveBtn=document.createElement("button");saveBtn.className="edit-save-btn";saveBtn.textContent="Save";
-    const cancelBtn=document.createElement("button");cancelBtn.className="edit-cancel-btn";cancelBtn.textContent="Cancel";
-    btnRow.appendChild(saveBtn);btnRow.appendChild(cancelBtn);content.appendChild(btnRow);
+  function enableEdit(wrapper, currentText) {
+    const content = wrapper.querySelector(".md-content");
+    if (!content) return;
+    const ta = document.createElement("textarea");
+    ta.className = "edit-textarea";
+    ta.value = currentText;
+    content.innerHTML = "";
+    content.appendChild(ta);
+    const btnRow = document.createElement("div");
+    btnRow.className = "edit-actions";
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "edit-save-btn";
+    saveBtn.textContent = "Save";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "edit-cancel-btn";
+    cancelBtn.textContent = "Cancel";
+    btnRow.appendChild(saveBtn);
+    btnRow.appendChild(cancelBtn);
+    content.appendChild(btnRow);
     ta.focus();
-    saveBtn.addEventListener("click",()=>{
-      const newText=ta.value.trim();
-      content.innerHTML=marked.parse(newText);renderMath(content);
-      addCopyBtn(wrapper,newText);
+    saveBtn.addEventListener("click", () => {
+      const newText = ta.value.trim();
+      content.innerHTML = marked.parse(newText);
+      renderMath(content);
+      addCopyBtn(wrapper, newText);
     });
-    cancelBtn.addEventListener("click",()=>{
-      content.innerHTML=marked.parse(currentText);renderMath(content);
-      addCopyBtn(wrapper,currentText);
+    cancelBtn.addEventListener("click", () => {
+      content.innerHTML = marked.parse(currentText);
+      renderMath(content);
+      addCopyBtn(wrapper, currentText);
     });
   }
 
-  /* -- TYPEWRITER animation (legacy — used only for file-upload / Slides
-     responses, which arrive as a single complete block from /chat) -- */
-  function typewriterRender(txt,dlUrl,dlName){
-    const wrapper=document.createElement("div");wrapper.className="message bot";
-    const content=document.createElement("div");content.className="md-content";
-    wrapper.appendChild(content);chatBox.appendChild(wrapper);chatBox.scrollTop=chatBox.scrollHeight;
-    content.innerHTML=marked.parse(txt);renderMath(content);
-    if(dlUrl){const a=document.createElement("a");a.href=dlUrl;a.download=dlName||"download";a.className="download-btn";a.textContent="📥 Download "+(dlName||"file");wrapper.appendChild(a);}
-    addCopyBtn(wrapper,txt);addMsgActions(wrapper,null,txt);chatBox.scrollTop=chatBox.scrollHeight;
+  function appendBotResponse(txt, dlUrl, dlName) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "message bot";
+    const content = document.createElement("div");
+    content.className = "md-content";
+    content.innerHTML = marked.parse(txt || "");
+    renderMath(content);
+    wrapper.appendChild(content);
+    if (dlUrl) {
+      const a = document.createElement("a");
+      a.href = dlUrl;
+      a.download = dlName || "download";
+      a.className = "download-btn";
+      a.textContent = `📥 Download ${dlName || "file"}`;
+      wrapper.appendChild(a);
+    }
+    if (txt) {
+      addCopyBtn(wrapper, txt);
+      addMsgActions(wrapper, null, txt);
+    }
+    chatBox.appendChild(wrapper);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return wrapper;
   }
 
-  /* -- v2.1 AI TEXT TRACKER --
-     Streams the response live via SSE (/chat/stream), rendering each
-     chunk of real model output as it arrives — replaces the old fake
-     typewriter animation with the model's actual token stream. */
-  async function streamRender(message){
-    const wrapper=document.createElement("div");wrapper.className="message bot";
-    const content=document.createElement("div");content.className="md-content";
-    wrapper.appendChild(content);chatBox.appendChild(wrapper);chatBox.scrollTop=chatBox.scrollHeight;
+  function createThinkingTrace() {
+    const steps = THINK_STEPS[window.ZENITH_MODE] || THINK_STEPS.default;
+    const wrapper = document.createElement("div");
+    wrapper.className = "message bot thinking-trace";
+    wrapper.innerHTML = `
+      <div class="thinking-card">
+        <div class="thinking-card__head">
+          <span class="thinking-dot"></span>
+          <strong>Thinking</strong>
+          <small class="thinking-elapsed">0.0s</small>
+        </div>
+        <div class="thinking-card__status">Preparing response...</div>
+        <div class="thinking-chip-row">${steps.map(step => `<span>${esc(step)}</span>`).join("")}</div>
+      </div>`;
+    chatBox.appendChild(wrapper);
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    let full="";
-    let result={ok:true,response:"",download_url:null,download_name:null};
+    const status = wrapper.querySelector(".thinking-card__status");
+    const elapsed = wrapper.querySelector(".thinking-elapsed");
+    const started = Date.now();
+    let idx = 0;
+    const interval = setInterval(() => {
+      const seconds = ((Date.now() - started) / 1000).toFixed(1);
+      if (elapsed) elapsed.textContent = `${seconds}s`;
+      if (status) status.textContent = steps[idx % steps.length];
+      idx += 1;
+    }, 260);
 
-    try{
-      const resp=await fetch("/chat/stream",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({message})
+    return {
+      started,
+      wrapper,
+      async finalize() {
+        const wait = Math.max(0, THINK_MIN_MS - (Date.now() - started));
+        if (wait) await new Promise(resolve => setTimeout(resolve, wait));
+        clearInterval(interval);
+        const total = ((Date.now() - started) / 1000).toFixed(1);
+        wrapper.classList.add("thinking-trace--done");
+        wrapper.innerHTML = `
+          <div class="thinking-card thinking-card--done">
+            <div class="thinking-card__head"><span class="thinking-dot"></span><strong>Thought for ${total}s</strong></div>
+            <div class="thinking-chip-row">${steps.slice(0, 3).map(step => `<span>${esc(step)}</span>`).join("")}</div>
+          </div>`;
+      },
+      remove() {
+        clearInterval(interval);
+        wrapper.remove();
+      }
+    };
+  }
+
+  function renderFilePreview() {
+    if (!pendingFiles.length) {
+      filePreview.classList.add("hidden");
+      fileCount.textContent = "";
+      return;
+    }
+    filePreview.classList.remove("hidden");
+    filePreview.innerHTML = pendingFiles.map((f, i) => `
+      <span class="file-tag">📎 ${esc(f.name)} (${(f.size / 1024).toFixed(1)} KB)
+        <button data-index="${i}">✕</button>
+      </span>`).join("");
+    fileCount.textContent = `${pendingFiles.length} file${pendingFiles.length > 1 ? "s" : ""} selected`;
+    filePreview.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.index);
+        pendingFiles.splice(idx, 1);
+        renderFilePreview();
       });
-      if(!resp.ok||!resp.body){
-        const data=await resp.json().catch(()=>({}));
-        throw new Error(data.error||("HTTP "+resp.status));
+    });
+  }
+
+  function addPickedFiles(files) {
+    const arr = Array.from(files || []);
+    arr.forEach(file => {
+      const dup = pendingFiles.some(p => p.name === file.name && p.size === file.size && p.lastModified === file.lastModified);
+      if (!dup) pendingFiles.push(file);
+    });
+    renderFilePreview();
+    closeAttachSheet();
+  }
+
+  function openAttachSheet() {
+    if (!attachSheet || !attachSheetOverlay) return;
+    attachSheet.classList.add("open");
+    attachSheetOverlay.classList.add("active");
+    attachSheet.setAttribute("aria-hidden", "false");
+  }
+
+  function closeAttachSheet() {
+    if (!attachSheet || !attachSheetOverlay) return;
+    attachSheet.classList.remove("open");
+    attachSheetOverlay.classList.remove("active");
+    attachSheet.setAttribute("aria-hidden", "true");
+    hideImportPanel();
+  }
+
+  function showImportPanel(provider) {
+    const providerMeta = {
+      gdrive: {
+        label: "Paste Google Drive file link",
+        note: "Use a public/shared Google Drive file link.",
+        placeholder: "https://drive.google.com/file/d/...",
+      },
+      github: {
+        label: "Paste GitHub link",
+        note: "Supports public GitHub repo, blob, raw, archive, or release asset links.",
+        placeholder: "https://github.com/...",
+      }
+    }[provider];
+    if (!providerMeta || !attachImportPanel) return;
+    attachImportPanel.classList.remove("hidden");
+    attachImportLabel.textContent = providerMeta.label;
+    attachImportNote.textContent = providerMeta.note;
+    attachImportUrl.placeholder = providerMeta.placeholder;
+    attachImportUrl.value = "";
+    attachImportConfirm.dataset.provider = provider;
+    setTimeout(() => attachImportUrl.focus(), 40);
+  }
+
+  function hideImportPanel() {
+    if (!attachImportPanel) return;
+    attachImportPanel.classList.add("hidden");
+    attachImportConfirm.dataset.provider = "";
+    attachImportUrl.value = "";
+  }
+
+  function b64ToBytes(b64) {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  async function importExternal(provider, url) {
+    const r = await fetch("/import-external", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, url })
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || "Import failed");
+    const bytes = b64ToBytes(data.data_b64);
+    const file = new File([bytes], data.filename, { type: data.content_type || "application/octet-stream", lastModified: Date.now() });
+    addPickedFiles([file]);
+    showToast(`${data.filename} added`, "success");
+  }
+
+  async function handleImportConfirm() {
+    const provider = attachImportConfirm.dataset.provider;
+    const url = (attachImportUrl.value || "").trim();
+    if (!provider || !url) {
+      showToast("Paste a valid public link", "error");
+      return;
+    }
+    attachImportConfirm.disabled = true;
+    const oldLabel = attachImportConfirm.textContent;
+    attachImportConfirm.textContent = "Importing...";
+    try {
+      await importExternal(provider, url);
+      hideImportPanel();
+      closeAttachSheet();
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      attachImportConfirm.disabled = false;
+      attachImportConfirm.textContent = oldLabel;
+    }
+  }
+
+  function wireAttachSheet() {
+    composerPlusBtn && composerPlusBtn.addEventListener("click", openAttachSheet);
+    attachSheetOverlay && attachSheetOverlay.addEventListener("click", closeAttachSheet);
+    attachSheetClose && attachSheetClose.addEventListener("click", closeAttachSheet);
+    attachImportCancel && attachImportCancel.addEventListener("click", hideImportPanel);
+    attachImportConfirm && attachImportConfirm.addEventListener("click", handleImportConfirm);
+    attachImportUrl && attachImportUrl.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleImportConfirm();
+      }
+    });
+
+    document.querySelectorAll("[data-attach-action]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const action = btn.dataset.attachAction;
+        if (action === "camera") cameraInput?.click();
+        if (action === "photo") photoInput?.click();
+        if (action === "file") fileInput?.click();
+        if (action === "code") codeInput?.click();
+        if (action === "gdrive" || action === "github") showImportPanel(action);
+      });
+    });
+
+    [fileInput, photoInput, cameraInput].forEach(el => {
+      el && el.addEventListener("change", () => {
+        if (el.files?.length) addPickedFiles(el.files);
+        el.value = "";
+      });
+    });
+  }
+
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, 170)}px`;
+  });
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true }));
+    }
+  });
+
+  sendBtn.addEventListener("click", e => {
+    e.preventDefault();
+    form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true }));
+  });
+
+  async function streamRender(message, thinking) {
+    let wrapper = null;
+    let content = null;
+    let shown = false;
+    let full = "";
+    let result = { ok: true, response: "", download_url: null, download_name: null };
+
+    async function ensureVisible() {
+      if (shown) return;
+      await thinking.finalize();
+      wrapper = document.createElement("div");
+      wrapper.className = "message bot";
+      content = document.createElement("div");
+      content.className = "md-content";
+      wrapper.appendChild(content);
+      chatBox.appendChild(wrapper);
+      shown = true;
+    }
+
+    try {
+      const resp = await fetch("/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, model_key: currentModelKey() })
+      });
+      if (!resp.ok || !resp.body) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${resp.status}`);
       }
 
-      const reader=resp.body.getReader();
-      const decoder=new TextDecoder();
-      let buf="";
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
 
-      while(true){
-        const {done,value}=await reader.read();
-        if(done)break;
-        buf+=decoder.decode(value,{stream:true});
-        const lines=buf.split("\n\n");
-        buf=lines.pop(); // keep any incomplete chunk for next read
-        for(const line of lines){
-          if(!line.startsWith("data:"))continue;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n\n");
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
           let payload;
-          try{payload=JSON.parse(line.slice(5).trim());}catch(e){continue;}
-          if(payload.error){throw new Error(payload.error);}
-          if(payload.delta){
-            full+=payload.delta;
-            content.innerHTML=marked.parse(full)+'<span class="text-tracker-cursor">▌</span>';
-            chatBox.scrollTop=chatBox.scrollHeight;
+          try { payload = JSON.parse(line.slice(5).trim()); } catch (e) { continue; }
+          if (payload.error) throw new Error(payload.error);
+          if (payload.delta) {
+            full += payload.delta;
+            if (!shown && (Date.now() - thinking.started >= THINK_MIN_MS || full.length > 120)) {
+              await ensureVisible();
+            }
+            if (shown && content) {
+              content.innerHTML = marked.parse(full) + '<span class="text-tracker-cursor">▌</span>';
+              chatBox.scrollTop = chatBox.scrollHeight;
+            }
           }
-          if(payload.done){
-            result.download_url=payload.download_url||null;
-            result.download_name=payload.download_name||null;
+          if (payload.done) {
+            result.download_url = payload.download_url || null;
+            result.download_name = payload.download_name || null;
           }
         }
       }
-    }catch(err){
-      result.ok=false;result.error=err.message;
+    } catch (err) {
+      result.ok = false;
+      result.error = err.message;
     }
 
-    // Final render (math, copy/regenerate buttons, download link)
-    content.innerHTML=marked.parse(full);renderMath(content);
-    if(!result.ok){
-      content.innerHTML+='<div class="stream-error">⚠ '+esc(result.error||"Connection error")+'</div>';
+    await ensureVisible();
+    if (content) {
+      content.innerHTML = marked.parse(full);
+      renderMath(content);
+      if (!result.ok) {
+        content.innerHTML += `<div class="stream-error">⚠ ${esc(result.error || "Connection error")}</div>`;
+      }
     }
-    if(result.download_url){
-      const a=document.createElement("a");a.href=result.download_url;a.download=result.download_name||"download";
-      a.className="download-btn";a.textContent="📥 Download "+(result.download_name||"file");wrapper.appendChild(a);
+    if (result.download_url && wrapper) {
+      const a = document.createElement("a");
+      a.href = result.download_url;
+      a.download = result.download_name || "download";
+      a.className = "download-btn";
+      a.textContent = `📥 Download ${result.download_name || "file"}`;
+      wrapper.appendChild(a);
     }
-    if(full){addCopyBtn(wrapper,full);addMsgActions(wrapper,null,full);}
+    if (full && wrapper) {
+      addCopyBtn(wrapper, full);
+      addMsgActions(wrapper, null, full);
+    }
 
-    result.response=full;
+    result.response = full;
     return result;
   }
 
-  window.appendChatMessage=function(role,content){
-    const isUser=role==="user";
-    const d=document.createElement("div");d.className="message "+(isUser?"user":"bot");
-    if(isUser){d.textContent=content;}
-    else{d.innerHTML='<div class="md-content">'+marked.parse(content)+'</div>';renderMath(d);addCopyBtn(d,content);addMsgActions(d,null,content);}
-    chatBox.appendChild(d);chatBox.scrollTop=chatBox.scrollHeight;
+  window.appendChatMessage = function(role, content) {
+    const isUser = role === "user";
+    const d = document.createElement("div");
+    d.className = `message ${isUser ? "user" : "bot"}`;
+    if (isUser) d.textContent = content;
+    else {
+      d.innerHTML = `<div class="md-content">${marked.parse(content)}</div>`;
+      renderMath(d);
+      addCopyBtn(d, content);
+      addMsgActions(d, null, content);
+    }
+    chatBox.appendChild(d);
+    chatBox.scrollTop = chatBox.scrollHeight;
   };
 
-  /* -- Load history on start -- */
-  async function loadHistory(){
-    try{
-      const r=await fetch("/history"),data=await r.json();
-      if(data.ok&&data.messages&&data.messages.length>0){
-        const welcome=chatBox.querySelector(".welcome");if(welcome)welcome.remove();
-        for(const msg of data.messages)window.appendChatMessage(msg.role,msg.content);
+  async function loadHistory() {
+    try {
+      const r = await fetch("/history");
+      const data = await r.json();
+      if (data.ok && data.messages && data.messages.length > 0) {
+        const welcome = chatBox.querySelector(".welcome");
+        if (welcome) welcome.remove();
+        data.messages.forEach(msg => window.appendChatMessage(msg.role, msg.content));
       }
-    }catch(e){}
+    } catch (e) {}
   }
-  // v4.0: ChatHistory (chat_history_redesign.js) is the canonical source for
-  // restoring the chat box on load via /api/chats (restoreRecent). Only fall
-  // back to the legacy /history endpoint if that script failed to load —
-  // otherwise both loaders would populate chat-box at once and duplicate messages.
-  if(typeof ChatHistory==="undefined")loadHistory();
+  if (typeof ChatHistory === "undefined") loadHistory();
 
-  /* -- Send message -- */
-  async function sendMessage(message){
-    if(pendingFiles.length)pendingFiles.forEach(f=>addFileIndicator(f.name));
-    if(message)addMessage(message,"user");
-    sendBtn.disabled=true;
+  async function sendMessage(message) {
+    if (pendingFiles.length) pendingFiles.forEach(f => addFileIndicator(f.name));
+    if (message) addMessage(message, "user");
+    sendBtn.disabled = true;
+    const canStream = !pendingFiles.length && window.ZENITH_MODE !== "pptx_generator";
+    const thinking = createThinkingTrace();
 
-    // v2.1: text-only messages (no file attachments) in any mode other than
-    // Slides Generator use the live SSE "AI text tracker". File uploads and
-    // Slides Generator (which returns a JSON->PPTX summary, not raw model
-    // text) still go through the non-streaming /chat endpoint.
-    const canStream=!pendingFiles.length&&window.ZENITH_MODE!=="pptx_generator";
-
-    if(canStream){
-      try{
-        const result=await streamRender(message);
-        if(!result.ok&&!result.response){
-          // Nothing useful came back at all — error already shown inline.
-        }else if(typeof ChatHistory!=="undefined"){
-          if(message)ChatHistory.appendMessage("user",message);
-          ChatHistory.appendMessage("assistant",result.response);
+    if (canStream) {
+      try {
+        const result = await streamRender(message, thinking);
+        if (typeof ChatHistory !== "undefined") {
+          if (message) ChatHistory.appendMessage("user", message);
+          if (result.response) ChatHistory.appendMessage("assistant", result.response);
         }
         window.dispatchEvent(new Event("zenith:message-sent"));
-      }catch(err){
-        addMessage("⚠ Connection error: "+err.message,"bot error");
-      }finally{
-        sendBtn.disabled=false;input.focus();
+      } catch (err) {
+        thinking.remove();
+        addMessage(`⚠ Connection error: ${err.message}`, "bot error");
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
       }
       return;
     }
 
-    const typingEl=addTyping();
-    try{
+    try {
       let r;
-      if(pendingFiles.length){
-        const fd=new FormData();
-        pendingFiles.forEach(f=>fd.append("files",f));
-        fd.append("message",message||"Please analyze these files");
-        r=await fetch("/chat",{method:"POST",body:fd});
-        pendingFiles=[];fileInput.value="";renderFilePreview();
-      }else{
-        r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message})});
+      if (pendingFiles.length) {
+        const fd = new FormData();
+        pendingFiles.forEach(f => fd.append("files", f));
+        fd.append("message", message || "Please analyze these files");
+        fd.append("model_key", currentModelKey());
+        r = await fetch("/chat", { method: "POST", body: fd });
+        pendingFiles = [];
+        renderFilePreview();
+        fileInput.value = "";
+      } else {
+        r = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, model_key: currentModelKey() })
+        });
       }
-      const data=await r.json();typingEl.remove();
-      if(!data.ok){addMessage("⚠ "+(data.error||"Unknown error"),"bot error");return;}
-      typewriterRender(data.response,data.download_url,data.download_name);
-      if(typeof ChatHistory!=="undefined"){
-        if(message)ChatHistory.appendMessage("user",message);
-        ChatHistory.appendMessage("assistant",data.response);
+      const data = await r.json();
+      await thinking.finalize();
+      if (!data.ok) {
+        addMessage(`⚠ ${data.error || "Unknown error"}`, "bot error");
+        return;
+      }
+      appendBotResponse(data.response, data.download_url, data.download_name);
+      if (typeof ChatHistory !== "undefined") {
+        if (message) ChatHistory.appendMessage("user", message);
+        ChatHistory.appendMessage("assistant", data.response);
       }
       window.dispatchEvent(new Event("zenith:message-sent"));
-    }catch(err){typingEl.remove();addMessage("⚠ Connection error: "+err.message,"bot error");}
-    finally{sendBtn.disabled=false;input.focus();}
+    } catch (err) {
+      thinking.remove();
+      addMessage(`⚠ Connection error: ${err.message}`, "bot error");
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
   }
 
-  form.addEventListener("submit",e=>{
-    e.preventDefault();const msg=input.value.trim();
-    if(!msg&&!pendingFiles.length)return;
-    input.value="";input.style.height="auto";sendMessage(msg);
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const msg = input.value.trim();
+    if (!msg && !pendingFiles.length) return;
+    input.value = "";
+    input.style.height = "auto";
+    sendMessage(msg);
   });
 
-  clearBtn&&clearBtn.addEventListener("click",async()=>{
-    if(!confirm("Clear all chat memory for this mode?"))return;
-    try{
-      const r=await fetch("/clear",{method:"POST"}),data=await r.json();
-      if(data.ok){
-        chatBox.innerHTML="";addMessage("Memory cleared. Starting fresh.","bot welcome");
-        if(typeof ChatHistory!=="undefined")ChatHistory.startNewChat(window.ZENITH_MODE);
+  clearBtn && clearBtn.addEventListener("click", async () => {
+    if (!confirm("Clear all chat memory for this mode?")) return;
+    try {
+      const r = await fetch("/clear", { method: "POST" });
+      const data = await r.json();
+      if (data.ok) {
+        chatBox.innerHTML = "";
+        addMessage("Memory cleared. Starting fresh.", "bot welcome");
+        if (typeof ChatHistory !== "undefined") ChatHistory.startNewChat(window.ZENITH_MODE);
       }
-    }catch(err){addMessage("⚠ Could not clear: "+err.message,"bot error");}
+    } catch (err) {
+      addMessage(`⚠ Could not clear: ${err.message}`, "bot error");
+    }
   });
 
-  logoutBtn&&logoutBtn.addEventListener("click",()=>{window.location.href="/logout";});
+  logoutBtn && logoutBtn.addEventListener("click", () => { window.location.href = "/logout"; });
 
-  /* -- Regenerate -- */
-  async function doRegenerate(){
-    const typingEl=addTyping();if(regenerateBtn)regenerateBtn.disabled=true;
-    try{
-      const r=await fetch("/regenerate",{method:"POST"});
-      const data=await r.json();typingEl.remove();
-      if(!data.ok){addMessage("⚠ "+(data.error||"Regeneration failed"),"bot error");return;}
-      typewriterRender(data.response);
-      if(typeof ChatHistory!=="undefined")ChatHistory.replaceLastAssistant(data.response);
-    }catch(err){typingEl.remove();addMessage("⚠ Regeneration error: "+err.message,"bot error");}
-    finally{if(regenerateBtn)regenerateBtn.disabled=false;}
+  async function doRegenerate() {
+    const thinking = createThinkingTrace();
+    if (regenerateBtn) regenerateBtn.disabled = true;
+    try {
+      const r = await fetch("/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_key: currentModelKey() })
+      });
+      const data = await r.json();
+      await thinking.finalize();
+      if (!data.ok) {
+        addMessage(`⚠ ${data.error || "Regeneration failed"}`, "bot error");
+        return;
+      }
+      appendBotResponse(data.response, data.download_url, data.download_name);
+      if (typeof ChatHistory !== "undefined") ChatHistory.replaceLastAssistant(data.response);
+    } catch (err) {
+      thinking.remove();
+      addMessage(`⚠ Regeneration error: ${err.message}`, "bot error");
+    } finally {
+      if (regenerateBtn) regenerateBtn.disabled = false;
+    }
   }
-  regenerateBtn&&regenerateBtn.addEventListener("click",doRegenerate);
+  regenerateBtn && regenerateBtn.addEventListener("click", doRegenerate);
 
-  /* -- Voice input (Web Speech API) -- */
-  let recognition=null;
-  if("webkitSpeechRecognition" in window||"SpeechRecognition" in window){
-    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-    recognition=new SpeechRecognition();
-    recognition.continuous=false;
-    recognition.interimResults=false;
-    recognition.lang="en-US";
+  let recognition = null;
+  if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
 
-    recognition.onresult=(e)=>{
-      const transcript=e.results[0][0].transcript;
-      input.value=(input.value?input.value+" ":"")+transcript;
-      input.style.height="auto";input.style.height=Math.min(input.scrollHeight,150)+"px";
-      micBtn.classList.remove("voice-recording","active");
-      showToast("Voice captured","info");
+    recognition.onresult = e => {
+      const transcript = e.results[0][0].transcript;
+      input.value = `${input.value ? `${input.value} ` : ""}${transcript}`;
+      input.style.height = "auto";
+      input.style.height = `${Math.min(input.scrollHeight, 170)}px`;
+      micBtn.classList.remove("voice-recording", "active");
+      showToast("Voice captured", "info");
     };
-    recognition.onerror=(e)=>{
-      micBtn.classList.remove("voice-recording","active");
-      showToast("Voice error: "+e.error,"error");
+    recognition.onerror = e => {
+      micBtn.classList.remove("voice-recording", "active");
+      showToast(`Voice error: ${e.error}`, "error");
     };
-    recognition.onend=()=>{micBtn.classList.remove("voice-recording","active");};
-
-    micBtn.addEventListener("click",()=>{
-      if(micBtn.classList.contains("voice-recording")){recognition.stop();return;}
-      micBtn.classList.add("voice-recording","active");
-      try{recognition.start();}catch(e){showToast("Could not start voice input","error");micBtn.classList.remove("voice-recording","active");}
+    recognition.onend = () => { micBtn.classList.remove("voice-recording", "active"); };
+    micBtn.addEventListener("click", () => {
+      if (micBtn.classList.contains("voice-recording")) {
+        recognition.stop();
+        return;
+      }
+      micBtn.classList.add("voice-recording", "active");
+      try { recognition.start(); }
+      catch (e) {
+        micBtn.classList.remove("voice-recording", "active");
+        showToast("Could not start voice input", "error");
+      }
     });
-  }else{
-    micBtn.style.display="none";
+  } else if (micBtn) {
+    micBtn.style.display = "none";
   }
 
-  /* -- Export chat -- */
-  exportBtn&&exportBtn.addEventListener("click",(e)=>{
+  exportBtn && exportBtn.addEventListener("click", e => {
     e.stopPropagation();
     exportDropdown.classList.toggle("show");
   });
-  document.addEventListener("click",()=>{exportDropdown.classList.remove("show");});
-  exportDropdown&&exportDropdown.querySelectorAll("button").forEach(btn=>{
-    btn.addEventListener("click",async()=>{
-      const fmt=btn.dataset.format;
-      const messages=collectMessages();
-      if(!messages.length){showToast("No messages to export","error");return;}
-      try{
-        const r=await fetch("/export-chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({format:fmt,mode:window.ZENITH_MODE,messages})});
-        const data=await r.json();
-        if(data.ok){window.location.href=data.url;showToast("Chat exported!","success");}
-        else showToast(data.error||"Export failed","error");
-      }catch(err){showToast("Export error: "+err.message,"error");}
+  document.addEventListener("click", () => exportDropdown.classList.remove("show"));
+  exportDropdown && exportDropdown.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const fmt = btn.dataset.format;
+      const messages = collectMessages();
+      if (!messages.length) {
+        showToast("No messages to export", "error");
+        return;
+      }
+      try {
+        const r = await fetch("/export-chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ format: fmt, mode: window.ZENITH_MODE, messages })
+        });
+        const data = await r.json();
+        if (data.ok) {
+          window.location.href = data.url;
+          showToast("Chat exported!", "success");
+        } else {
+          showToast(data.error || "Export failed", "error");
+        }
+      } catch (err) {
+        showToast(`Export error: ${err.message}`, "error");
+      }
     });
   });
 
-  function collectMessages(){
-    const msgs=[];
-    chatBox.querySelectorAll(".message").forEach(m=>{
-      if(m.classList.contains("welcome")||m.classList.contains("error")||m.classList.contains("file-indicator"))return;
-      const isUser=m.classList.contains("user");
-      const content=m.querySelector(".md-content");
-      const text=content?content.textContent:m.textContent;
-      msgs.push({role:isUser?"user":"assistant",content:text.trim()});
+  function collectMessages() {
+    const msgs = [];
+    chatBox.querySelectorAll(".message").forEach(m => {
+      if (m.classList.contains("welcome") || m.classList.contains("error") || m.classList.contains("file-indicator") || m.classList.contains("thinking-trace")) return;
+      const isUser = m.classList.contains("user");
+      const content = m.querySelector(".md-content");
+      const text = content ? content.textContent : m.textContent;
+      msgs.push({ role: isUser ? "user" : "assistant", content: (text || "").trim() });
     });
     return msgs;
   }
 
-  /* -- Toast notifications -- */
-  function showToast(message,type="info"){
-    const toast=document.createElement("div");toast.className="toast "+type;toast.textContent=message;
+  function showToast(message, type = "info") {
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
     toastContainer.appendChild(toast);
-    setTimeout(()=>{toast.remove();},3000);
+    setTimeout(() => { toast.remove(); }, 3000);
   }
-  window.showToast=showToast;
+  window.showToast = showToast;
 
-  /* -- Code project upload -- */
-  const codeInput=document.getElementById("codeInput");
-  const uploadCodeBtn=document.getElementById("uploadCodeBtn");
-  uploadCodeBtn&&uploadCodeBtn.addEventListener("click",()=>codeInput&&codeInput.click());
-  codeInput&&codeInput.addEventListener("change",async()=>{
-    const file=codeInput.files[0];if(!file)return;
-    const fd=new FormData();fd.append("file",file);fd.append("message","Analyze and improve this code project");
-    addFileIndicator(file.name);const typingEl=addTyping();
-    try{
-      const r=await fetch("/upload-code",{method:"POST",body:fd});
-      const data=await r.json();typingEl.remove();
-      if(!data.ok){addMessage("⚠ "+(data.error||"Upload failed"),"bot error");return;}
-      typewriterRender(data.response,data.download_url,data.download_name);
-    }catch(err){typingEl.remove();addMessage("⚠ Upload error: "+err.message,"bot error");}
-    codeInput.value="";
+  codeInput && codeInput.addEventListener("change", async () => {
+    const file = codeInput.files[0];
+    if (!file) return;
+    addFileIndicator(file.name);
+    const thinking = createThinkingTrace();
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("message", "Analyze and improve this code project");
+      fd.append("model_key", currentModelKey());
+      const r = await fetch("/upload-code", { method: "POST", body: fd });
+      const data = await r.json();
+      await thinking.finalize();
+      if (!data.ok) {
+        addMessage(`⚠ ${data.error || "Upload failed"}`, "bot error");
+        return;
+      }
+      appendBotResponse(data.response, data.download_url, data.download_name);
+    } catch (err) {
+      thinking.remove();
+      addMessage(`⚠ Upload error: ${err.message}`, "bot error");
+    } finally {
+      codeInput.value = "";
+    }
   });
 
+  wireAttachSheet();
+  bootModelSelection();
   input.focus();
 })();
 
 /* ==========================================================
    MEMORY SIDEBAR
    ========================================================== */
-(()=>{
-  const sidebar=document.getElementById("memorySidebar");
-  const overlay=document.getElementById("sidebarOverlay");
-  const memoryBtn=document.getElementById("memoryBtn");
-  const closeBtn=document.getElementById("sidebarClose");
-  const body=document.getElementById("sidebarBody");
-  const emptyMsg=document.getElementById("sidebarEmpty");
-  const AI_MODES={researcher:{name:"Researcher",emoji:"🔍"},developer:{name:"Developer",emoji:"💻"},story_writer:{name:"Story Writer",emoji:"📖"},solve_it:{name:"Solve It",emoji:"🧮"},email_writer:{name:"Email Writer",emoji:"✉️"},pptx_generator:{name:"Slides",emoji:"📊"}};
-  let loaded=false;
+(() => {
+  const sidebar = document.getElementById("memorySidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  const memoryBtn = document.getElementById("memoryBtn");
+  const closeBtn = document.getElementById("sidebarClose");
+  const body = document.getElementById("sidebarBody");
+  const emptyMsg = document.getElementById("sidebarEmpty");
+  const AI_MODES = { researcher: { name: "Researcher", emoji: "🔍" }, developer: { name: "Developer", emoji: "💻" }, story_writer: { name: "Story Writer", emoji: "📖" }, solve_it: { name: "Solve It", emoji: "🧮" }, email_writer: { name: "Email Writer", emoji: "✉️" }, pptx_generator: { name: "Slides", emoji: "📊" } };
+  let loaded = false;
 
-  function open(){sidebar.classList.add("open");overlay.classList.add("active");document.body.classList.add("sidebar-open");if(!loaded){load();loaded=true;}}
-  function close(){sidebar.classList.remove("open");overlay.classList.remove("active");document.body.classList.remove("sidebar-open");}
+  function open() {
+    sidebar.classList.add("open");
+    overlay.classList.add("active");
+    document.body.classList.add("sidebar-open");
+    if (!loaded) { load(); loaded = true; }
+  }
+  function close() {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("active");
+    document.body.classList.remove("sidebar-open");
+  }
 
-  if(memoryBtn)memoryBtn.addEventListener("click",open);
-  if(closeBtn)closeBtn.addEventListener("click",close);
-  if(overlay)overlay.addEventListener("click",close);
+  if (memoryBtn) memoryBtn.addEventListener("click", open);
+  if (closeBtn) closeBtn.addEventListener("click", close);
+  if (overlay) overlay.addEventListener("click", close);
 
-  async function load(){
-    try{
-      const res=await fetch("/memory-sidebar"),data=await res.json();
-      if(!data.ok)return;
-      const modes=data.modes||{};let total=0;
-      Object.values(modes).forEach(a=>{total+=a.length;});
-      if(total===0){emptyMsg&&(emptyMsg.style.display="block");return;}
-      if(emptyMsg)emptyMsg.style.display="none";
-      Object.entries(modes).forEach(([key,exchanges])=>{
-        if(!exchanges||!exchanges.length)return;
-        const meta=AI_MODES[key]||{name:key,emoji:"🤖"};
-        const sec=document.createElement("div");sec.className="sidebar-mode-section";
-        const lbl=document.createElement("div");lbl.className="sidebar-mode-label";
-        lbl.innerHTML="<span>"+meta.emoji+"</span> "+meta.name;sec.appendChild(lbl);
-        exchanges.forEach(ex=>{
-          const item=document.createElement("div");item.className="sidebar-chat-item";
-          item.innerHTML="<div class=\"sidebar-chat-user\">"+esc(ex.user)+"</div><div class=\"sidebar-chat-bot\">"+esc(ex.assistant)+"</div>";
+  async function load() {
+    try {
+      const res = await fetch("/memory-sidebar");
+      const data = await res.json();
+      if (!data.ok) return;
+      const modes = data.modes || {};
+      let total = 0;
+      Object.values(modes).forEach(a => { total += a.length; });
+      if (total === 0) {
+        emptyMsg && (emptyMsg.style.display = "block");
+        return;
+      }
+      if (emptyMsg) emptyMsg.style.display = "none";
+      Object.entries(modes).forEach(([key, exchanges]) => {
+        if (!exchanges || !exchanges.length) return;
+        const meta = AI_MODES[key] || { name: key, emoji: "🤖" };
+        const sec = document.createElement("div");
+        sec.className = "sidebar-mode-section";
+        const lbl = document.createElement("div");
+        lbl.className = "sidebar-mode-label";
+        lbl.innerHTML = `<span>${meta.emoji}</span> ${meta.name}`;
+        sec.appendChild(lbl);
+        exchanges.forEach(ex => {
+          const item = document.createElement("div");
+          item.className = "sidebar-chat-item";
+          item.innerHTML = `<div class="sidebar-chat-user">${esc(ex.user)}</div><div class="sidebar-chat-bot">${esc(ex.assistant)}</div>`;
           sec.appendChild(item);
         });
         body.appendChild(sec);
       });
-    }catch(e){console.warn("Memory sidebar:",e);}
+    } catch (e) {
+      console.warn("Memory sidebar:", e);
+    }
   }
 
-  function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+  function esc(s) {
+    return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
 
-  window.addEventListener("zenith:message-sent",()=>{
-    loaded=false;
-    if(sidebar.classList.contains("open")){body.innerHTML="";if(emptyMsg){emptyMsg.style.display="block";body.appendChild(emptyMsg);}load();loaded=true;}
+  window.addEventListener("zenith:message-sent", () => {
+    loaded = false;
+    if (sidebar.classList.contains("open")) {
+      body.innerHTML = "";
+      if (emptyMsg) {
+        emptyMsg.style.display = "block";
+        body.appendChild(emptyMsg);
+      }
+      load();
+      loaded = true;
+    }
   });
 })();
 
 /* ==========================================================
-   MOBILE SIDEBAR TOGGLE
+   MOBILE SIDEBAR TOGGLE + ESCAPE HANDLING
    ========================================================== */
-(()=>{
-  const sidebar=document.getElementById("zh-sidebar");
-  const backdrop=document.getElementById("zh-backdrop");
-  const toggle=document.getElementById("zh-sidebar-toggle");
-  if(!sidebar||!toggle)return;
-  function openSidebar(){sidebar.classList.add("zh-open");toggle.setAttribute("aria-expanded","true");backdrop.style.display="block";}
-  function closeSidebar(){sidebar.classList.remove("zh-open");toggle.setAttribute("aria-expanded","false");backdrop.style.display="none";}
-  toggle.addEventListener("click",()=>sidebar.classList.contains("zh-open")?closeSidebar():openSidebar());
-  backdrop.addEventListener("click",closeSidebar);
+(() => {
+  const sidebar = document.getElementById("zh-sidebar");
+  const backdrop = document.getElementById("zh-backdrop");
+  const toggle = document.getElementById("zh-sidebar-toggle");
+  const attachSheet = document.getElementById("attachSheet");
+  const attachSheetOverlay = document.getElementById("attachSheetOverlay");
+  if (toggle && sidebar) {
+    function openSidebar() { sidebar.classList.add("zh-open"); toggle.setAttribute("aria-expanded", "true"); backdrop.style.display = "block"; }
+    function closeSidebar() { sidebar.classList.remove("zh-open"); toggle.setAttribute("aria-expanded", "false"); backdrop.style.display = "none"; }
+    toggle.addEventListener("click", () => sidebar.classList.contains("zh-open") ? closeSidebar() : openSidebar());
+    backdrop.addEventListener("click", closeSidebar);
+  }
+
+  document.addEventListener("keydown", e => {
+    const isMeta = e.ctrlKey || e.metaKey;
+    if (isMeta && e.key.toLowerCase() === "k") {
+      const search = document.getElementById("zh-search-input");
+      if (search) { e.preventDefault(); search.focus(); search.select(); }
+      return;
+    }
+    if (e.key === "Escape") {
+      const memorySidebar = document.getElementById("memorySidebar");
+      const sidebarOverlay = document.getElementById("sidebarOverlay");
+      if (memorySidebar && memorySidebar.classList.contains("open")) {
+        memorySidebar.classList.remove("open");
+        sidebarOverlay && sidebarOverlay.classList.remove("active");
+        document.body.classList.remove("sidebar-open");
+      }
+      if (attachSheet && attachSheet.classList.contains("open")) {
+        attachSheet.classList.remove("open");
+        attachSheetOverlay && attachSheetOverlay.classList.remove("active");
+      }
+      const exportDropdown = document.getElementById("exportDropdown");
+      if (exportDropdown) exportDropdown.classList.remove("show");
+      if (sidebar && sidebar.classList.contains("zh-open")) {
+        sidebar.classList.remove("zh-open");
+        backdrop && (backdrop.style.display = "none");
+        toggle && toggle.setAttribute("aria-expanded", "false");
+      }
+    }
+  });
 })();
 
 /* ==========================================================
    SCROLL-TO-BOTTOM BUTTON
-   Shows a floating button whenever the user has scrolled away
-   from the latest message; clicking it jumps back to the bottom.
    ========================================================== */
-(()=>{
-  const chatBox=document.getElementById("chat-box");
-  const btn=document.getElementById("scrollToBottomBtn");
-  if(!chatBox||!btn)return;
-
-  const THRESHOLD=80; // px from bottom before we consider it "not at bottom"
-
-  function isNearBottom(){
-    return chatBox.scrollHeight-chatBox.scrollTop-chatBox.clientHeight<THRESHOLD;
+(() => {
+  const chatBox = document.getElementById("chat-box");
+  const btn = document.getElementById("scrollToBottomBtn");
+  if (!chatBox || !btn) return;
+  const THRESHOLD = 80;
+  function isNearBottom() {
+    return chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < THRESHOLD;
   }
-
-  function update(){
-    if(isNearBottom())btn.classList.add("hidden");
+  function update() {
+    if (isNearBottom()) btn.classList.add("hidden");
     else btn.classList.remove("hidden");
   }
-
-  chatBox.addEventListener("scroll",update);
-  btn.addEventListener("click",()=>{
-    chatBox.scrollTo({top:chatBox.scrollHeight,behavior:"smooth"});
-  });
-
-  // Re-check whenever new content streams in (typewriter, history load, etc.)
-  const observer=new MutationObserver(()=>{
-    // Only auto-hide if the user is already at the bottom; don't yank
-    // the button away while they're deliberately reading scrollback.
-    if(isNearBottom())btn.classList.add("hidden");
-  });
-  observer.observe(chatBox,{childList:true,subtree:true,characterData:true});
-
+  chatBox.addEventListener("scroll", update);
+  btn.addEventListener("click", () => { chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" }); });
+  const observer = new MutationObserver(() => { if (isNearBottom()) btn.classList.add("hidden"); });
+  observer.observe(chatBox, { childList: true, subtree: true, characterData: true });
   update();
-})();
-
-/* ==========================================================
-   KEYBOARD SHORTCUTS
-   - Esc: close memory sidebar, mobile chat list, export dropdown
-   - Ctrl/Cmd+K: focus the chat-history search box
-   ========================================================== */
-(()=>{
-  document.addEventListener("keydown",(e)=>{
-    const isMeta=e.ctrlKey||e.metaKey;
-
-    if(isMeta&&e.key.toLowerCase()==="k"){
-      const search=document.getElementById("zh-search-input");
-      if(search){e.preventDefault();search.focus();search.select();}
-      return;
-    }
-
-    if(e.key==="Escape"){
-      const memorySidebar=document.getElementById("memorySidebar");
-      const sidebarOverlay=document.getElementById("sidebarOverlay");
-      if(memorySidebar&&memorySidebar.classList.contains("open")){
-        memorySidebar.classList.remove("open");
-        sidebarOverlay&&sidebarOverlay.classList.remove("active");
-        document.body.classList.remove("sidebar-open");
-      }
-
-      const exportDropdown=document.getElementById("exportDropdown");
-      if(exportDropdown)exportDropdown.classList.remove("show");
-
-      const zhSidebar=document.getElementById("zh-sidebar");
-      const zhBackdrop=document.getElementById("zh-backdrop");
-      const zhToggle=document.getElementById("zh-sidebar-toggle");
-      if(zhSidebar&&zhSidebar.classList.contains("zh-open")){
-        zhSidebar.classList.remove("zh-open");
-        zhBackdrop&&(zhBackdrop.style.display="none");
-        zhToggle&&zhToggle.setAttribute("aria-expanded","false");
-      }
-    }
-  });
 })();

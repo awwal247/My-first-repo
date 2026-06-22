@@ -1,42 +1,84 @@
-{% extends "base.html" %}
-{% block title %}History — Zenith OX{% endblock %}
-{% block content %}
-<div class="page-content p-6">
-  <div class="page-header mb-6">
-    <h1 class="page-title">Chat History</h1>
-    <p class="page-sub">All your past conversations across every mode.</p>
-  </div>
-  <div class="glass-card" id="historyList">
-    <p class="muted-text">Loading history…</p>
-  </div>
-</div>
-<script>
-fetch('/api/chats?limit=50').then(r => r.json()).then(data => {
-  var box = document.getElementById('historyList');
-  var chats = data.chats || [];
-  if (!chats.length) { box.innerHTML = '<p class="muted-text">No chats yet.</p>'; return; }
-  box.innerHTML = '<div class="history-grid">' + chats.map(function(c) {
-    return '<div class="history-item">' +
-      '<div class="history-item-left">' +
-        '<span class="history-icon">💬</span>' +
-        '<div>' +
-          '<div class="history-title">' + (c.title || 'Untitled') + '</div>' +
-          '<div class="history-meta">' + (c.mode || '') + ' · ' + (c.updated_at ? c.updated_at.slice(0,16).replace('T',' ') : '') + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="history-actions">' +
-        '<a href="/chat?chat_id=' + c.id + '" class="btn-sm">Open</a>' +
-        '<button class="btn-sm btn-danger" onclick="deleteChat(\'' + c.id + '\', this)">Delete</button>' +
-      '</div>' +
-    '</div>';
-  }).join('') + '</div>';
-}).catch(function() { document.getElementById('historyList').innerHTML = '<p class="muted-text">Could not load history.</p>'; });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith OX — History Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-page">
+    <div class="dashboard-shell dashboard-shell--two-col">
+        <aside class="dashboard-sidebar">
+            <a href="{{ url_for('main.menu') }}" class="brand-mark">
+                <span class="brand-mark__orb"></span>
+                <span><strong>Zenith OX</strong><small>Neural workspace</small></span>
+            </a>
+            <nav class="dashboard-nav">
+                <a href="{{ url_for('main.menu') }}">Overview</a>
+                <a href="{{ url_for('main.profile') }}">Profile</a>
+                <a href="{{ url_for('main.settings') }}">Settings</a>
+                <a href="{{ url_for('main.files_page') }}">Files</a>
+                <a href="{{ url_for('main.history_center') }}" class="is-active">History</a>
+                <a href="{{ url_for('main.notifications_page') }}">Notifications{% if unread_notifications %} · {{ unread_notifications }}{% endif %}</a>
+            </nav>
+        </aside>
 
-function deleteChat(id, btn) {
-  if (!confirm('Delete this chat?')) return;
-  fetch('/api/chats/' + id, { method: 'DELETE' }).then(function(r) {
-    if (r.ok) btn.closest('.history-item').remove();
-  });
-}
-</script>
-{% endblock %}
+        <main class="management-main">
+            <section class="management-header">
+                <span class="eyebrow-pill">History center</span>
+                <h1>Search and manage previous chats</h1>
+                <p>Reopen, pin, or delete chat sessions from any mode without losing the upgraded workspace flow.</p>
+            </section>
+
+            {% with messages=get_flashed_messages(with_categories=true) %}
+            {% for category,msg in messages %}
+            <div class="alert alert-{{ category }}">{{ msg }}</div>
+            {% endfor %}
+            {% endwith %}
+
+            <section class="page-card">
+                <form method="GET" class="search-row">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search by title or message content">
+                    <button type="submit" class="btn-primary">Search</button>
+                    {% if search_query %}<a href="{{ url_for('main.history_center') }}" class="btn-secondary">Reset</a>{% endif %}
+                </form>
+            </section>
+
+            <section class="page-card">
+                <h3>{{ chats|length }} chat{{ '' if chats|length == 1 else 's' }}</h3>
+                {% if chats %}
+                <div class="item-list">
+                    {% for chat in chats %}
+                    <div class="item-row">
+                        <div>
+                            <strong>{% if chat.pinned %}📌 {% endif %}{{ chat.title }}</strong>
+                            <span>{{ chat.mode|replace('_', ' ')|title }} · {{ chat.message_count or 0 }} messages · {{ chat.updated_at.strftime('%Y-%m-%d %H:%M') if chat.updated_at else '' }}</span>
+                        </div>
+                        <div class="item-row__actions item-row__actions--stack">
+                            <form method="POST">
+                                <input type="hidden" name="chat_id" value="{{ chat.id }}">
+                                <button type="submit" name="action" value="open" class="btn-primary">Open</button>
+                            </form>
+                            <form method="POST">
+                                <input type="hidden" name="chat_id" value="{{ chat.id }}">
+                                <button type="submit" name="action" value="pin" class="btn-secondary">{% if chat.pinned %}Unpin{% else %}Pin{% endif %}</button>
+                            </form>
+                            <form method="POST" onsubmit="return confirm('Delete this chat permanently?');">
+                                <input type="hidden" name="chat_id" value="{{ chat.id }}">
+                                <button type="submit" name="action" value="delete" class="btn-secondary btn-secondary--danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>No chat sessions matched your search.</p>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

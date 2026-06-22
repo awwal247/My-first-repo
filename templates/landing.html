@@ -3,227 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX — Agentic AI Workspace</title>
+    <title>Zenith OX v2.5 — Standard AI Workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="landing-page">
-
-    <nav class="landing-nav">
-        <div class="landing-nav-inner">
-            <div class="landing-logo">
-                <div class="logo-icon">&#9711;</div>
-                <span class="logo-text">ZENITH OX</span>
-            </div>
-            <div class="landing-nav-links">
-                <a href="#features">Product</a>
-                <a href="#modes">Modes</a>
-                <a href="#pricing">Pricing</a>
-                <a href="#features">Docs</a>
-            </div>
-            <div class="landing-nav-cta">
-                <a href="/login" class="btn-nav-login">Sign In</a>
-                <a href="/register" class="btn-nav-signup">Get Started &rarr;</a>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a href="/" class="brand-mark">
+                <span class="brand-mark__orb"></span>
+                <span>
+                    <strong>Zenith OX</strong>
+                    <small>v2.5 standard workspace</small>
+                </span>
+            </a>
+            <nav class="site-nav">
+                <a href="#features">Features</a>
+                <a href="#workspace">Workspace</a>
+                <a href="#update">v2.5</a>
+            </nav>
+            <div class="site-header__actions">
+                <a href="/login" class="btn-ghost">Sign in</a>
+                <a href="/register" class="btn-primary">Launch app</a>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <section class="landing-hero">
-        <div class="landing-hero-inner">
-            <div class="landing-hero-left">
-                <div class="hero-badge">&#10022; AGENTIC AI WORKSPACE</div>
-                <h1 class="hero-headline">
-                    Think deeper.<br>
-                    Respond sharper.<br>
-                    Build faster.
-                </h1>
-                <p class="hero-sub">
-                    ZENITH OX is your agentic AI workspace for research,
-                    creation, and execution&mdash;powered by advanced models,
-                    tools, and memory that work for you.
+    <main class="landing-main landing-main--rich">
+        <section class="hero hero--rich hero--v25">
+            <div class="hero-copy">
+                <span class="eyebrow-pill">Zenith OX v2.5 update</span>
+                <h1>A cleaner, more standard AI workspace with better attachments, visible thinking, and model control.</h1>
+                <p>
+                    Zenith OX v2.5 upgrades the product to feel closer to a modern professional AI workspace:
+                    rounded prompt bar, bottom attachment sheet, GitHub and Google Drive import, model switching,
+                    exact file naming, and a more polished landing-to-chat journey.
                 </p>
-                <div class="hero-buttons">
-                    <a href="/register" class="btn-primary">&#128640; Launch Workspace</a>
-                    <a href="/login" class="btn-ghost">&#9654; Watch demo</a>
+                <div class="hero-cta hero-cta--stacked">
+                    <a href="/register" class="btn-primary btn-primary--xl">Create account</a>
+                    <a href="/login" class="btn-secondary btn-secondary--xl">Open workspace</a>
                 </div>
-            </div>
-            <div class="landing-hero-right">
-                <div class="hero-orb-wrap">
-                    <div class="hero-orb">
-                        <div class="orb-ring orb-ring-1"></div>
-                        <div class="orb-ring orb-ring-2"></div>
-                        <div class="orb-ring orb-ring-3"></div>
-                        <div class="orb-core">&#8960;</div>
+                <div class="hero-stats hero-stats--glass">
+                    <div>
+                        <strong>v2.5</strong>
+                        <span>Major UI update</span>
                     </div>
-                    <div class="hero-feature-tag tag-tl">
-                        <span>&#128270;</span>
-                        <div><strong>Deep Research</strong><small>Web, papers, data</small></div>
+                    <div>
+                        <strong>5 ways</strong>
+                        <span>to attach content</span>
                     </div>
-                    <div class="hero-feature-tag tag-tr">
-                        <span>&#128065;</span>
-                        <div><strong>Vision AI</strong><small>See. Understand. Analyze.</small></div>
+                    <div>
+                        <strong>4 models</strong>
+                        <span>available in-chat</span>
                     </div>
-                    <div class="hero-feature-tag tag-bl">
-                        <span>&#129504;</span>
-                        <div><strong>Persistent Memory</strong><small>Remembers what matters</small></div>
-                    </div>
-                    <div class="hero-feature-tag tag-br">
-                        <span>&#128202;</span>
-                        <div><strong>Presentation Generator</strong><small>Slides that tell your story</small></div>
+                    <div>
+                        <strong>Exact</strong>
+                        <span>download naming</span>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <section class="landing-stats">
-        <div class="stats-inner">
-            <div class="stat-item">
-                <span class="stat-icon">&#128172;</span>
-                <strong>2.4M</strong><span>chats</span>
+            <div class="hero-visual">
+                <div class="hero-orb"></div>
+                <div class="hero-panel hero-panel--primary">
+                    <div class="hero-panel__header">
+                        <span class="status-dot"></span>
+                        <span>Workspace highlights</span>
+                    </div>
+                    <div class="hero-panel__metrics">
+                        <article>
+                            <small>Prompt area</small>
+                            <strong>Rounded plus-button composer</strong>
+                            <span>Cleaner, more familiar chat entry experience</span>
+                        </article>
+                        <article>
+                            <small>Attachment flow</small>
+                            <strong>Bottom-sheet import panel</strong>
+                            <span>Camera, photo, files, Drive, GitHub, and code ZIP</span>
+                        </article>
+                    </div>
+                </div>
+                <div class="hero-stack">
+                    <div class="hero-mini-card">
+                        <span>Thinking</span>
+                        <strong>Visible pre-response trace in the conversation</strong>
+                    </div>
+                    <div class="hero-mini-card">
+                        <span>Models</span>
+                        <strong>Llama, GPT OSS 120B, Gemini Flash, Gemini Pro</strong>
+                    </div>
+                    <div class="hero-mini-card">
+                        <span>Developer UX</span>
+                        <strong>Exact output names for generated files and projects</strong>
+                    </div>
+                </div>
             </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-                <span class="stat-icon">&#128101;</span>
-                <strong>180k</strong><span>users</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-                <span class="stat-icon">&#128737;</span>
-                <strong>99.9%</strong><span>uptime</span>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="landing-features" id="features">
-        <div class="features-inner">
-            <div class="feature-card">
-                <div class="feature-icon-wrap fi-blue">&#128270;</div>
-                <h3>Deep Research</h3>
-                <p>Go beyond the surface. ZENITH OX scans thousands of sources, analyzes data, and delivers insights you can trust.</p>
-                <span class="feature-arrow">&rarr;</span>
+        <section class="feature-section" id="features">
+            <div class="section-heading">
+                <span class="eyebrow-pill">Platform highlights</span>
+                <h2>Everything requested for a more regular, production-style workspace is now built in.</h2>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon-wrap fi-cyan">&#128065;</div>
-                <h3>Vision AI</h3>
-                <p>Upload images, charts, and docs. Extract insights, detect patterns, and understand anything visually.</p>
-                <span class="feature-arrow">&rarr;</span>
+            <div class="feature-bento">
+                <article class="feature-card feature-card--wide">
+                    <h3>Popular-AI style composer</h3>
+                    <p>The attachment action now lives inside the rounded prompt area as a plus button, making the workspace feel more familiar and more polished.</p>
+                </article>
+                <article class="feature-card">
+                    <h3>Thinking trace</h3>
+                    <p>Users now see a visible pre-answer thinking status inside the chat before the full response appears.</p>
+                </article>
+                <article class="feature-card">
+                    <h3>Real import actions</h3>
+                    <p>Camera, photo, files, Google Drive public links, and GitHub public links feed directly into the attachment queue.</p>
+                </article>
+                <article class="feature-card">
+                    <h3>Model switcher</h3>
+                    <p>Swap models without leaving the active chat workspace.</p>
+                </article>
+                <article class="feature-card feature-card--glow">
+                    <h3>Sharper product surface</h3>
+                    <p>Landing, workspace, README guidance, and developer download behavior are aligned under one stronger v2.5 release.</p>
+                </article>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon-wrap fi-purple">&#128202;</div>
-                <h3>Presentation Generator</h3>
-                <p>Turn ideas into stunning presentations in seconds. AI-designed, on-brand, and ready to impress.</p>
-                <span class="feature-arrow">&rarr;</span>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon-wrap fi-amber">&#129504;</div>
-                <h3>Persistent Memory</h3>
-                <p>ZENITH OX remembers what matters&mdash;your preferences, context, and history so you can pick up where you left off.</p>
-                <span class="feature-arrow">&rarr;</span>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="landing-pricing" id="pricing">
-        <div class="pricing-inner">
-            <div class="pricing-card">
-                <div class="pricing-tier-icon">&#128100;</div>
-                <div class="pricing-tier-label">Free</div>
-                <div class="pricing-price"><span class="price-amount">$0</span><span class="price-period">/mo</span></div>
-                <p class="pricing-desc">Explore the power of ZENITH OX.</p>
-                <ul class="pricing-features">
-                    <li>&#10003; 20 messages / day</li>
-                    <li>&#10003; Basic models</li>
-                    <li>&#10003; Standard tools</li>
-                </ul>
-                <a href="/register" class="pricing-btn pricing-btn-outline">Get Started</a>
+        <section class="workspace-showcase" id="workspace">
+            <div class="section-heading section-heading--left">
+                <span class="eyebrow-pill">Workspace system</span>
+                <h2>A more standard layout with better control and fewer clicks.</h2>
             </div>
-            <div class="pricing-card pricing-card-featured">
-                <div class="pricing-popular-badge">POPULAR</div>
-                <div class="pricing-tier-icon">&#9733;</div>
-                <div class="pricing-tier-label">Pro</div>
-                <div class="pricing-price"><span class="price-amount">$19</span><span class="price-period">/mo</span></div>
-                <p class="pricing-desc">For professionals who move fast.</p>
-                <ul class="pricing-features">
-                    <li>&#10003; Unlimited messages</li>
-                    <li>&#10003; Advanced models</li>
-                    <li>&#10003; All core tools</li>
-                    <li>&#10003; Priority support</li>
-                </ul>
-                <a href="/register" class="pricing-btn pricing-btn-primary">Start Pro Trial</a>
+            <div class="workspace-grid">
+                <article class="workspace-card workspace-card--large">
+                    <span class="workspace-card__tag">Chat</span>
+                    <h3>Focused central conversation canvas</h3>
+                    <p>Cleaner top bar, integrated model switcher, visible thinking trace, and a bottom composer that keeps attachments close to where the user types.</p>
+                    <ul>
+                        <li>Rounded prompt area with inline plus button</li>
+                        <li>Bottom attachment sheet with actionable import sources</li>
+                        <li>More predictable download and file-return naming</li>
+                    </ul>
+                </article>
+                <article class="workspace-card">
+                    <span class="workspace-card__tag">Files</span>
+                    <h3>Bring context in faster</h3>
+                    <p>Users can attach content from local sources and supported public links without leaving the main workflow.</p>
+                </article>
+                <article class="workspace-card" id="update">
+                    <span class="workspace-card__tag">v2.5</span>
+                    <h3>Sharper release messaging</h3>
+                    <p>The landing page and README now explain the new UI, model presets, import options, and exact download naming behavior.</p>
+                </article>
             </div>
-            <div class="pricing-card">
-                <div class="pricing-tier-icon">&#128101;</div>
-                <div class="pricing-tier-label">Team</div>
-                <div class="pricing-price"><span class="price-amount">$49</span><span class="price-period">/mo</span></div>
-                <p class="pricing-desc">Collaborate and scale with your team.</p>
-                <ul class="pricing-features">
-                    <li>&#10003; Everything in Pro</li>
-                    <li>&#10003; Team workspaces</li>
-                    <li>&#10003; Shared memory</li>
-                    <li>&#10003; Admin controls</li>
-                </ul>
-                <a href="/register" class="pricing-btn pricing-btn-outline">Start Team Trial</a>
-            </div>
-            <div class="pricing-card">
-                <div class="pricing-tier-icon">&#127970;</div>
-                <div class="pricing-tier-label">Enterprise</div>
-                <div class="pricing-price"><span class="price-amount">Custom</span></div>
-                <p class="pricing-desc">Built for organizations with scale and security needs.</p>
-                <ul class="pricing-features">
-                    <li>&#10003; Private deployments</li>
-                    <li>&#10003; SSO &amp; SCIM</li>
-                    <li>&#10003; Custom integrations</li>
-                    <li>&#10003; Dedicated support</li>
-                </ul>
-                <a href="/login" class="pricing-btn pricing-btn-outline">Contact Sales</a>
-            </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
-    <footer class="landing-footer">
-        <div class="footer-inner">
-            <div class="footer-brand">
-                <div class="landing-logo">
-                    <div class="logo-icon">&#9711;</div>
-                    <span class="logo-text">ZENITH OX</span>
-                </div>
-                <p>Agentic AI workspace for<br>research, creation, and execution.</p>
-            </div>
-            <div class="footer-links">
-                <div class="footer-col">
-                    <h4>Product</h4>
-                    <a href="#features">Overview</a>
-                    <a href="#features">Features</a>
-                    <a href="#pricing">Pricing</a>
-                </div>
-                <div class="footer-col">
-                    <h4>Resources</h4>
-                    <a href="#">Docs</a>
-                    <a href="#">API Reference</a>
-                    <a href="#">Help Center</a>
-                </div>
-                <div class="footer-col">
-                    <h4>Company</h4>
-                    <a href="#">About</a>
-                    <a href="#">Blog</a>
-                    <a href="#">Contact</a>
-                </div>
-                <div class="footer-security">
-                    <div class="security-badge">&#128274;</div>
-                    <strong>Your data. Your control.</strong>
-                    <p>Enterprise-grade security, privacy-first design, and transparent policies.</p>
-                    <a href="#">Learn more &rarr;</a>
-                </div>
-            </div>
+    <footer class="landing-footer landing-footer--rich">
+        <div>
+            <strong>Zenith OX</strong>
+            <p>Professional AI workspace with a cleaner frontend and stronger attachment workflow in v2.5.</p>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2025 ZENITH OX. All rights reserved.</p>
-            <div class="footer-bottom-links">
-                <a href="#">Privacy</a>
-                <a href="#">Terms</a>
-                <a href="#">Security</a>
-                <a href="#">Status</a>
-            </div>
+        <div class="landing-footer__links">
+            <a href="/login">Sign in</a>
+            <a href="/register">Create account</a>
+            <a href="#features">Features</a>
         </div>
     </footer>
 </body>

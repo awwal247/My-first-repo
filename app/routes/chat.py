@@ -20,6 +20,7 @@ v4.0 changes:
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import time
@@ -41,18 +42,20 @@ from pptx import Presentation
 from pptx.util import Inches, Pt  # noqa: F401
 
 from app.config.ai_modes import AI_MODES
+from app.config.chat_models import DEFAULT_CHAT_MODEL_KEY, apply_chat_model_override
 from app.config.settings import Config
 from app.services.ai_client import ask_ai, ask_ai_stream, ask_groq_vision
+from app.services.external_imports import download_external_file
 from app.services.memory import retrieve_relevant_memory
 from app.services.search import web_search, format_sources
 from app.services.storage import get_user_memory, update_user_memory
+from app.utils.artifacts import build_code_download_artifact, extract_requested_artifact_name
 from app.utils.files import (
     MAX_UPLOAD_SIZE,
     extract_code_blocks,
     extract_file_content,
     format_files_for_prompt,
     read_archive,
-    save_code_as_zip,
 )
 
 chat_bp = Blueprint("chat", __name__)
@@ -73,6 +76,19 @@ _FILE_GEN_KEYWORDS: list[str] = [
 def _user_wants_file(message: str) -> bool:
     msg_lower = message.lower()
     return any(kw in msg_lower for kw in _FILE_GEN_KEYWORDS)
+
+
+def _request_model_key() -> str:
+    raw = None
+    if request.content_type and "multipart/form-data" in (request.content_type or ""):
+        raw = request.form.get("model_key")
+    else:
+        data = request.get_json(silent=True) or {}
+        raw = data.get("model_key")
+
+    model_key = (raw or session.get("chat_model_key") or DEFAULT_CHAT_MODEL_KEY).strip()
+    session["chat_model_key"] = model_key
+    return model_key
 
 # ---------------------------------------------------------------------------
 # PPTX generation helpers — v4.0 with Pollinations.ai images
@@ -306,7 +322,10 @@ def chat():
 
     user_id = session["user_id"]
     mode_key = session.get("ai_mode", "researcher")
-    mode = AI_MODES.get(mode_key, AI_MODES["researcher"])
+    mode = apply_chat_model_override(
+        AI_MODES.get(mode_key, AI_MODES["researcher"]),
+        _request_model_key(),
+    )
 
     # Parse request (multipart for uploads, JSON otherwise)
     uploaded_files: list = []
@@ -430,7 +449,10 @@ def chat():
     if mode_key == "developer" and _user_wants_file(message):
         code_blocks = extract_code_blocks(answer)
         if code_blocks:
-            zip_info = save_code_as_zip(code_blocks)
+            zip_info = build_code_download_artifact(
+                code_blocks,
+                requested_name=extract_requested_artifact_name(message),
+            )
             if zip_info:
                 update_user_memory(memory_key, "user", message)
                 update_user_memory(memory_key, "assistant", answer)
@@ -471,7 +493,10 @@ def chat_stream():
 
     user_id = session["user_id"]
     mode_key = session.get("ai_mode", "researcher")
-    mode = AI_MODES.get(mode_key, AI_MODES["researcher"])
+    mode = apply_chat_model_override(
+        AI_MODES.get(mode_key, AI_MODES["researcher"]),
+        _request_model_key(),
+    )
 
     if mode.get("special_handler") == "pptx":
         return jsonify({"ok": False, "error": "Slides Generator does not support streaming."}), 400
@@ -513,7 +538,10 @@ def chat_stream():
         if mode_key == "developer" and _user_wants_file(message):
             code_blocks = extract_code_blocks(answer)
             if code_blocks:
-                zip_info = save_code_as_zip(code_blocks)
+                zip_info = build_code_download_artifact(
+                    code_blocks,
+                    requested_name=extract_requested_artifact_name(message),
+                )
                 if zip_info:
                     done_payload["download_url"] = zip_info["url"]
                     done_payload["download_name"] = zip_info["filename"]
@@ -546,7 +574,10 @@ def regenerate():
 
     user_id = session["user_id"]
     mode_key = session.get("ai_mode", "researcher")
-    mode = AI_MODES.get(mode_key, AI_MODES["researcher"])
+    mode = apply_chat_model_override(
+        AI_MODES.get(mode_key, AI_MODES["researcher"]),
+        _request_model_key(),
+    )
 
     # Get the last user message from memory
     memory_key = f"{user_id}:{mode_key}"
@@ -625,7 +656,10 @@ def regenerate():
     if mode_key == "developer" and _user_wants_file(clean_msg):
         code_blocks = extract_code_blocks(answer)
         if code_blocks:
-            zip_info = save_code_as_zip(code_blocks)
+            zip_info = build_code_download_artifact(
+                code_blocks,
+                requested_name=extract_requested_artifact_name(clean_msg),
+            )
             if zip_info:
                 return jsonify({
                     "ok": True,
@@ -687,7 +721,10 @@ def upload_code():
 
     user_id = session["user_id"]
     mode_key = "developer"
-    mode = AI_MODES["developer"]
+    mode = apply_chat_model_override(
+        AI_MODES["developer"],
+        _request_model_key(),
+    )
     memory_key = f"{user_id}:{mode_key}"
 
     upload_prompt = (
@@ -711,7 +748,10 @@ def upload_code():
     response_data = {"ok": True, "response": answer}
 
     if code_blocks:
-        zip_info = save_code_as_zip(code_blocks)
+        zip_info = build_code_download_artifact(
+            code_blocks,
+            requested_name=extract_requested_artifact_name(instruction),
+        )
         if zip_info:
             response_data["download_url"] = zip_info["url"]
             response_data["download_name"] = zip_info["filename"]
@@ -719,6 +759,43 @@ def upload_code():
     update_user_memory(memory_key, "user", f"[Uploaded: {file_list}] {instruction}")
     update_user_memory(memory_key, "assistant", answer)
     return jsonify(response_data)
+
+
+
+@chat_bp.route("/import-external", methods=["POST"])
+def import_external():
+    if "user_id" not in session:
+        return jsonify({"ok": False, "error": "Not authenticated."}), 401
+
+    data = request.get_json(silent=True) or {}
+    provider = (data.get("provider") or "").strip().lower()
+    url = (data.get("url") or "").strip()
+    if not provider or not url:
+        return jsonify({"ok": False, "error": "Provider and URL are required."}), 400
+
+    try:
+        payload, filename, content_type = download_external_file(provider, url, MAX_UPLOAD_SIZE)
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+    return jsonify({
+        "ok": True,
+        "provider": provider,
+        "filename": filename,
+        "content_type": content_type,
+        "size_bytes": len(payload),
+        "data_b64": base64.b64encode(payload).decode("utf-8"),
+    })
+
+@chat_bp.route("/download-generated/<path:filename>")
+def download_generated(filename: str):
+    if "user_id" not in session:
+        return redirect(url_for("auth.login_page"))
+    safe_name = os.path.basename(filename)
+    filepath = os.path.join("/tmp", safe_name)
+    if not os.path.exists(filepath):
+        return "File not found or expired", 404
+    return send_from_directory("/tmp", safe_name, as_attachment=True, download_name=safe_name)
 
 @chat_bp.route("/download/<filename>")
 def download_file(filename: str):

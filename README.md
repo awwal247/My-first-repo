@@ -1,43 +1,63 @@
-# ZENITH OX v4.0 — OpenRouter Edition
+# Zenith OX v2.5 — Standard AI Workspace
 
-A Secure Intelligent AI Assistant with Chat History & Vector Memory.
-Powered by **OpenRouter** (primary) with **Groq** fallback for vision.
+Zenith OX v2.5 is a Flask + SQL + OpenRouter workspace with a more standard chat UI, visible thinking trace, better attachment workflows, exact download naming, and workspace model switching.
 
-## What's New in v4.0 OpenRouter Edition
+## v2.5 update highlights
 
-| Feature | Description |
-|---------|-------------|
-| **OpenRouter First, Groq Fallback** | `ask_ai()` routes to OpenRouter first, falls back to Groq on failure |
-| **Multi-Image Upload** | Upload multiple images in one message, each analyzed by Groq Vision |
-| **Pollinations.ai PPTX Images** | AI-generated images automatically embedded in presentations |
-| **Voice Input** | Web Speech API microphone button for voice-to-text |
-| **Dark Mode** | Full dark theme with CSS variables and localStorage persistence |
-| **Chat Export** | Export chats as Markdown, Text, or JSON |
-| **Regenerate** | Retry the last AI response with higher temperature |
-| **Edit Messages** | Inline edit any bot message |
-| **Pin Chats** | Pin important chats to keep them at the top |
-| **Search Chats** | Full-text search across all chat titles and messages |
-| **Rename Chats** | Inline rename any chat session |
-| **Restore on Load** | Automatically restores your most recent chat on page load |
-| **No Jupyter Notebooks** | All AI modes use API models — no manual training needed |
+- Rounded prompt composer with inline **plus** button inside the chat input
+- **Thinking trace** shown in chat before the final answer lands
+- Bottom attachment sheet with **Camera**, **Photo**, **Files**, **Google Drive**, **GitHub**, and **Code ZIP** actions
+- Public-link import support for **Google Drive** and **GitHub**
+- Workspace model selection for:
+  - Meta Llama Versatile 3.1
+  - OpenAI GPT OSS 120B
+  - Google Gemini Flash 3.1 preset
+  - Google Gemini Pro
+- Improved return-file naming so generated files are delivered with user-expected names whenever possible
+- Refreshed landing page and workspace presentation
 
-## Architecture
+## Stack
 
-```
-User Message
-    → ask_ai()
-        → ask_openrouter()  [PRIMARY: OpenRouter API]
-        → ask_groq()        [FALLBACK: Groq API]
-        → ask_groq_vision() [VISION: Groq multimodal for images]
-```
+- **Backend:** Python, Flask, PostgreSQL / Supabase-style SQL
+- **AI routing:** OpenRouter primary, Groq fallback / vision
+- **Frontend:** Jinja templates, vanilla JavaScript, custom CSS
+- **File handling:** PDFs, Office docs, spreadsheets, images, archives, code files
 
-## OpenRouter Setup
+## Workspace model presets
 
-1. Get your API key at [openrouter.ai/keys](https://openrouter.ai/keys)
-2. Set `OPENROUTER_API_KEY` in your environment variables
-3. Groq key is still required for image/vision analysis
+The workspace model picker changes the active chat model without changing the higher-level AI mode.
 
-## Environment Variables
+| UI label | Routed model |
+|---|---|
+| Meta Llama Versatile 3.1 | `meta-llama/llama-3.1-70b-instruct` |
+| OpenAI GPT OSS 120B | `openai/gpt-oss-120b:free` |
+| Google Gemini Flash 3.1 | `google/gemini-2.5-flash` |
+| Google Gemini Pro | `google/gemini-2.5-pro` |
+
+> Note: the Gemini Flash and Pro presets are mapped to current stable OpenRouter Gemini endpoints in code.
+
+## Attachment sheet behavior
+
+The plus button inside the composer opens a bottom sheet with:
+
+- **Camera** → opens a camera capture file picker on supported devices
+- **Photo** → opens local image selection
+- **Files** → opens general file selection
+- **Google Drive** → imports a public/shared Google Drive file link
+- **GitHub** → imports a public GitHub repo, blob, raw, archive, or release asset link
+- **Code ZIP** → developer-only project upload action
+
+Imported files are added to the same pending attachment queue used by normal local uploads.
+
+## Exact file naming
+
+For developer outputs, v2.5 improves artifact delivery:
+
+- single generated files are returned directly when possible
+- multi-file outputs are zipped with a more meaningful archive name
+- if the user explicitly asks for a filename or archive name, the app tries to preserve it exactly
+
+## Environment variables
 
 ```bash
 # Required
@@ -46,45 +66,58 @@ GROQ_API_KEY=gsk_...
 DATABASE_URL=postgresql://...
 
 # Optional
-TAVILY_API_KEY=tvly-...        # For web search in Researcher mode
-GOOGLE_CLIENT_ID=...           # For Google OAuth
-GOOGLE_CLIENT_SECRET=...       # For Google OAuth
+EXA_API_KEY=...
+TAVILY_API_KEY=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+FLASK_SECRET_KEY=...
+FLASK_DEBUG=false
 ```
 
-## Install Dependencies
+## Install
 
 ```bash
 pip install -r requirements.txt
 ```
 
-No `huggingface_hub` needed — OpenRouter handles all model routing.
+## Run locally
 
-## Deploy
+```bash
+python app.py
+```
 
-Push to GitHub and deploy on Vercel as usual.
+Then open:
 
-## API Endpoints
+```text
+http://127.0.0.1:5000/
+```
+
+## Main routes
+
+### App
+- `GET /` — landing page
+- `GET /menu` — dashboard / workspace overview
+- `GET /chat` — chat workspace
+- `GET /files` — files vault
+- `GET /history-center` — chat history center
+- `GET /settings` — workspace settings
 
 ### Chat
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/chat` | Send message (supports multi-file upload) |
-| POST | `/regenerate` | Regenerate last response |
-| POST | `/clear` | Clear conversation memory |
-| POST | `/upload-code` | Upload ZIP/RAR code project |
-| POST | `/export-chat` | Export chat (md, txt, json) |
-| GET | `/history` | Get conversation history |
-| GET | `/memory-sidebar` | Get memory for all modes |
+- `POST /chat` — standard message + file upload
+- `POST /chat/stream` — SSE text streaming
+- `POST /regenerate` — regenerate last answer
+- `POST /clear` — clear mode memory
+- `POST /upload-code` — analyze / modify a ZIP or RAR code project
+- `POST /import-external` — import a public Google Drive or GitHub file into the attachment queue
+- `GET /download-generated/<filename>` — download generated file or archive
 
-### Chat Sessions
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/chats` | List all chats |
-| POST | `/api/chats/create` | Create new chat |
-| GET | `/api/chats/<id>` | Get single chat |
-| PUT | `/api/chats/<id>` | Update chat |
-| DELETE | `/api/chats/<id>` | Delete chat |
-| POST | `/api/chats/<id>/pin` | Toggle pin |
-| POST | `/api/chats/<id>/rename` | Rename chat |
-| POST | `/api/chats/<id>/restore` | Restore chat |
-| GET | `/api/chats/search?q=...` | Search chats |
+## Notes for deployment
+
+- The workspace expects OpenRouter as the primary inference provider.
+- Groq is still used as a fallback and for image understanding.
+- Public Google Drive and GitHub imports do not require OAuth because they are link-based imports.
+- If you want private Google Drive selection, you can extend the current link-based flow with OAuth and the Google Picker API.
+
+## v2.5 release goal
+
+This update focuses on making Zenith OX feel closer to a real, polished AI workspace instead of a basic demo interface while keeping the backend Flask architecture simple and maintainable.
