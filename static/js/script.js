@@ -1,8 +1,13 @@
 /* ==========================================================
-   ZENITH OX v2.6 — Workspace Chat UI
-   Rounded composer, thinking trace, import sheet, model switcher
+   ZENITH OX v2.7 — Workspace Chat UI
+   Thinking levels, token limiting, user-only edit, fresh chat on load, PDF export
    ========================================================== */
 (() => {
+  // v2.7 — Fresh chat on every dashboard open (no last-chat memory restore)
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem("zenith_last_chat_restored");
+  }
+
   const chatBox = document.getElementById("chat-box");
   const form = document.getElementById("chatForm");
   const input = document.getElementById("user-input");
@@ -35,6 +40,74 @@
 
   const MODEL_STORAGE_KEY = "zenith:selected-model";
   const THINK_MIN_MS = 1600;
+
+  // v2.7 — Thinking level state (controlled by dropdown, NOT by user typing temps)
+  let _thinkingLevel = "medium";
+  let _temperature = 1.4;
+
+  function currentThinkingLevel() { return _thinkingLevel; }
+  function currentTemperature() { return _temperature; }
+
+  // Wire up thinking dropdown
+  const thinkingToggle = document.getElementById("thinkingToggle");
+  const thinkingDropdown = document.getElementById("thinkingDropdown");
+  const thinkingStatusLabel = document.getElementById("thinkingStatusLabel");
+  const thinkOptions = document.querySelectorAll(".v27-think-option");
+
+  const THINK_LABELS = {
+    low:       "🌡 Low thinking",
+    medium:    "⚡ Medium thinking",
+    high:      "🔥 High thinking",
+    high_high: "🚀 High High thinking"
+  };
+
+  if (thinkingToggle && thinkingDropdown) {
+    thinkingToggle.addEventListener("click", e => {
+      e.stopPropagation();
+      thinkingDropdown.classList.toggle("open");
+      thinkingToggle.classList.toggle("active");
+    });
+    document.addEventListener("click", () => {
+      thinkingDropdown.classList.remove("open");
+      thinkingToggle.classList.remove("active");
+    });
+  }
+
+  thinkOptions && thinkOptions.forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      if (btn.dataset.locked === "true") {
+        showToast("High thinking modes require a Pro plan. Upgrade to unlock.", "error");
+        return;
+      }
+      const level = btn.dataset.level;
+      const temp  = parseFloat(btn.dataset.temp);
+      _thinkingLevel = level;
+      _temperature   = temp;
+      thinkOptions.forEach(b => b.classList.remove("v27-think-option--active"));
+      btn.classList.add("v27-think-option--active");
+      if (thinkingStatusLabel) thinkingStatusLabel.textContent = THINK_LABELS[level] || level;
+      if (thinkingDropdown) {
+        thinkingDropdown.classList.remove("open");
+        thinkingToggle && thinkingToggle.classList.remove("active");
+      }
+    });
+  });
+
+  // v2.7 — Model selector in the v27-model-bar (top bar)
+  const topModelSelect = document.getElementById("modelSelect");
+  const modelStatusBar = document.getElementById("modelStatus");
+  if (topModelSelect) {
+    topModelSelect.addEventListener("change", () => {
+      const opt = topModelSelect.options[topModelSelect.selectedIndex];
+      if (opt && opt.dataset.premium === "true" && !window.ZENITH_USER_PREMIUM) {
+        showToast("This model requires a Pro plan. Upgrade to unlock.", "error");
+        topModelSelect.value = window.ZENITH_SELECTED_MODEL || topModelSelect.options[0].value;
+        return;
+      }
+      if (modelStatusBar) modelStatusBar.textContent = opt ? opt.textContent.replace(" 🔒 Premium", "") : "";
+    });
+  }
   const FILE_RE = new RegExp("^(?:#|//|/\\s*\\*\\*|<!--)?\\s*File:\\s*(.+?)\\s*(?:\\*/|-->)?$", "i");
   const THINK_STEPS = {
     developer: ["run cat", "run touch", "run nano", "review schema", "shape patch"],
@@ -95,9 +168,12 @@
   }
 
   function updateModelStatus() {
-    if (!modelSelect || !modelStatus) return;
-    const label = modelSelect.options[modelSelect.selectedIndex]?.textContent || currentModelKey();
-    modelStatus.textContent = label;
+    // v2.7 — model selector is now in the top bar (id="modelSelect" in v27-model-bar)
+    const ms = document.getElementById("modelStatus");
+    const sel = document.getElementById("modelSelect");
+    if (!sel || !ms) return;
+    const label = sel.options[sel.selectedIndex]?.textContent.replace(" 🔒 Premium", "") || currentModelKey();
+    ms.textContent = label;
   }
 
   function bootModelSelection() {
@@ -614,12 +690,22 @@
         r = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message, model_key: currentModelKey() })
+          body: JSON.stringify({
+            message,
+            model_key: currentModelKey(),
+            thinking_level: currentThinkingLevel(),
+            temperature: currentTemperature()
+          })
         });
       }
       const data = await r.json();
       await thinking.finalize();
       if (!data.ok) {
+        if (data.token_limit_exceeded) {
+          showToast(data.error || "Daily token limit reached. Upgrade to Pro for unlimited access.", "error");
+          setTimeout(() => { window.location.href = data.redirect || "/paywall"; }, 2000);
+          return;
+        }
         addMessage(`⚠ ${data.error || "Unknown error"}`, "bot error");
         return;
       }
@@ -740,6 +826,12 @@
         showToast("No messages to export", "error");
         return;
       }
+
+      if (fmt === "pdf") {
+        exportChatAsPDF(messages);
+        return;
+      }
+
       try {
         const r = await fetch("/export-chat", {
           method: "POST",
@@ -759,6 +851,110 @@
     });
   });
 
+  function exportChatAsPDF(messages) {
+    try {
+      if (!window.jspdf) {
+        showToast("PDF library not loaded. Check your connection.", "error");
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 18;
+      const contentW = pageW - margin * 2;
+      const now = new Date();
+      const modeName = (window.ZENITH_MODE || "workspace").replace(/_/g, " ");
+      const timestamp = now.toLocaleString();
+
+      let y = margin;
+
+      function checkPageBreak(needed) {
+        if (y + needed > pageH - margin) {
+          doc.addPage();
+          y = margin;
+        }
+      }
+
+      function writeLine(text, opts = {}) {
+        const { fontSize = 10, bold = false, color = [220, 228, 255], indent = 0 } = opts;
+        doc.setFontSize(fontSize);
+        doc.setFont("helvetica", bold ? "bold" : "normal");
+        doc.setTextColor(...color);
+        const lines = doc.splitTextToSize(text, contentW - indent);
+        lines.forEach(line => {
+          checkPageBreak(fontSize * 0.4 + 2);
+          doc.text(line, margin + indent, y);
+          y += fontSize * 0.38 + 2;
+        });
+      }
+
+      doc.setFillColor(7, 12, 28);
+      doc.rect(0, 0, pageW, pageH, "F");
+
+      doc.setFillColor(14, 21, 52);
+      doc.roundedRect(margin - 4, y - 2, contentW + 8, 22, 4, 4, "F");
+
+      writeLine("✦  ZENITH OX", { fontSize: 14, bold: true, color: [180, 160, 255] });
+      writeLine(`Mode: ${modeName.charAt(0).toUpperCase() + modeName.slice(1)}   ·   Exported: ${timestamp}`, {
+        fontSize: 8, color: [140, 150, 190]
+      });
+      y += 6;
+
+      doc.setDrawColor(80, 70, 140);
+      doc.setLineWidth(0.3);
+      doc.line(margin, y, pageW - margin, y);
+      y += 6;
+
+      messages.forEach((msg, i) => {
+        const isUser = msg.role === "user";
+        const roleLabel = isUser ? "You" : "Zenith OX";
+        const roleColor = isUser ? [120, 180, 255] : [160, 120, 255];
+        const bubbleColor = isUser ? [14, 28, 58] : [20, 14, 42];
+
+        const bodyLines = doc.splitTextToSize(msg.content || "", contentW - 6);
+        const blockH = bodyLines.length * 5.2 + 14;
+        checkPageBreak(blockH + 4);
+
+        doc.setFillColor(...bubbleColor);
+        doc.roundedRect(margin - 2, y - 1, contentW + 4, blockH, 4, 4, "F");
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...roleColor);
+        doc.text(roleLabel, margin + 2, y + 6);
+        y += 10;
+
+        doc.setFontSize(9.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(210, 218, 245);
+        bodyLines.forEach(line => {
+          checkPageBreak(5.2);
+          doc.text(line, margin + 2, y);
+          y += 5.2;
+        });
+
+        y += 6;
+      });
+
+      y += 4;
+      doc.setDrawColor(60, 55, 110);
+      doc.line(margin, y, pageW - margin, y);
+      y += 5;
+      writeLine(`Zenith OX v2.6  ·  ${messages.length} message${messages.length !== 1 ? "s" : ""}`, {
+        fontSize: 7.5, color: [100, 110, 155]
+      });
+
+      const safeMode = modeName.replace(/\s+/g, "_").replace(/[^a-z0-9_]/gi, "");
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+      doc.save(`zenith_ox_${safeMode}_${dateStr}.pdf`);
+      showToast("PDF downloaded!", "success");
+    } catch (err) {
+      showToast(`PDF error: ${err.message}`, "error");
+    }
+  }
+
   function collectMessages() {
     const msgs = [];
     chatBox.querySelectorAll(".message").forEach(m => {
@@ -776,7 +972,7 @@
     toast.className = `toast ${type}`;
     toast.textContent = message;
     toastContainer.appendChild(toast);
-    setTimeout(() => { toast.remove(); }, 3000);
+    setTimeout(() => { toast.classList.add('toast--hide'); setTimeout(() => { toast.remove(); }, 400); }, 5000);
   }
   window.showToast = showToast;
 
@@ -943,6 +1139,11 @@
    SCROLL-TO-BOTTOM BUTTON
    ========================================================== */
 (() => {
+  // v2.7 — Fresh chat on every dashboard open (no last-chat memory restore)
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem("zenith_last_chat_restored");
+  }
+
   const chatBox = document.getElementById("chat-box");
   const btn = document.getElementById("scrollToBottomBtn");
   if (!chatBox || !btn) return;

@@ -16,6 +16,13 @@ v4.0 changes:
   - Pollinations.ai PPTX image generation
   - /regenerate endpoint to retry last response
   - Uses ask_ai() for HF-first, Groq-fallback routing
+
+v2.7 changes:
+  - Token limit check (1,000 tokens/day for Basic users) BEFORE AI call
+  - Model access check (Gemini models require Pro/Premium)
+  - Temperature validated server-side from thinking_level dropdown
+  - Edit-message restricted to user messages only (enforced client-side;
+    backend ignores any attempt to edit AI messages)
 """
 
 from __future__ import annotations
@@ -42,8 +49,9 @@ from pptx import Presentation
 from pptx.util import Inches, Pt  # noqa: F401
 
 from app.config.ai_modes import AI_MODES
-from app.config.chat_models import DEFAULT_CHAT_MODEL_KEY, apply_chat_model_override
+from app.config.chat_models import DEFAULT_CHAT_MODEL_KEY, apply_chat_model_override, is_model_premium_only
 from app.config.settings import Config
+from app.services.db import db_find_user_by_id  # noqa: F401 — used by v2.7 checks
 from app.services.ai_client import ask_ai, ask_ai_stream, ask_groq_vision
 from app.services.external_imports import download_external_file
 from app.services.memory import retrieve_relevant_memory
@@ -321,11 +329,64 @@ def chat():
         return jsonify({"ok": False, "error": "Not authenticated."}), 401
 
     user_id = session["user_id"]
+
+    # ── v2.7: Resolve user premium status ──────────────────────────────────
+    _user_obj = db_find_user_by_id(user_id)
+    _is_premium = bool((_user_obj or {}).get("is_premium", False))
+
+    # ── v2.7: Read thinking_level and resolve temperature server-side ───────
+    # The user cannot type custom temperature values — the dropdown drives it.
+    _ALLOWED_TEMPS = {
+        "low":       0.2,
+        "medium":    1.4,
+        "high":      2.0,   # Pro/Premium only
+        "high_high": 2.4,   # Pro/Premium only
+    }
+    _raw_data = request.get_json(silent=True) or {}
+    _thinking_level = (_raw_data.get("thinking_level") or "medium").strip().lower()
+    if _thinking_level in ("high", "high_high") and not _is_premium:
+        _thinking_level = "medium"   # silently downgrade free users
+    _temperature = _ALLOWED_TEMPS.get(_thinking_level, 1.4)
+
+    # ── v2.7: Resolve model key and check model access ──────────────────────
+    _model_key = _request_model_key()
+    if is_model_premium_only(_model_key) and not _is_premium:
+        return jsonify({
+            "ok": False,
+            "error": "This model requires a Pro or Premium plan.",
+            "token_limit_exceeded": False,
+            "redirect": url_for("main.paywall"),
+        }), 403
+
+    # ── v2.7: Check daily token limit BEFORE calling the model ─────────────
+    try:
+        from python_additions.token_tracker import (
+            check_token_limit,
+            record_token_usage,
+            estimate_tokens,
+        )
+        from flask import current_app
+        _sb = getattr(current_app, "supabase", None)
+        if _sb:
+            _limit_check = check_token_limit(_sb, user_id, _is_premium)
+            if not _limit_check["allowed"]:
+                return jsonify({
+                    "ok": False,
+                    "error": "Daily token limit reached. Upgrade to Pro for unlimited access.",
+                    "token_limit_exceeded": True,
+                    "redirect": url_for("main.paywall"),
+                }), 429
+        _token_tracking_available = _sb is not None
+    except ImportError:
+        _token_tracking_available = False
+
     mode_key = session.get("ai_mode", "researcher")
     mode = apply_chat_model_override(
         AI_MODES.get(mode_key, AI_MODES["researcher"]),
-        _request_model_key(),
+        _model_key,
     )
+    # Inject the validated temperature into the mode so ask_ai() uses it
+    mode["temperature"] = _temperature
 
     # Parse request (multipart for uploads, JSON otherwise)
     uploaded_files: list = []
@@ -467,6 +528,15 @@ def chat():
     user_content = message or f"[Uploaded: {', '.join(f.filename for f in uploaded_files if f)}]"
     update_user_memory(memory_key, "user", user_content)
     update_user_memory(memory_key, "assistant", answer)
+
+    # ── v2.7: Record token usage AFTER successful response ──────────────────
+    if _token_tracking_available:
+        try:
+            _tokens = estimate_tokens(full_message + answer)
+            record_token_usage(_sb, user_id, _tokens)
+        except Exception:
+            pass
+
     return jsonify({"ok": True, "response": answer})
 
 

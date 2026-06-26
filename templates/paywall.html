@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith OX — Upgrade to Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-page paywall-page">
+
+    <div class="paywall-shell">
+
+        <header class="paywall-header">
+            <a href="{{ url_for('main.menu') }}" class="paywall-back">← Back to Dashboard</a>
+            <a href="/" class="lp27-brand">
+                <span class="brand-mark__orb"></span>
+                <strong>Zenith OX</strong>
+            </a>
+        </header>
+
+        <div class="paywall-body">
+
+            <div class="paywall-hero-text">
+                <span class="eyebrow-pill">Zenith OX Premium</span>
+                <h1>You've reached your daily limit</h1>
+                <p>Free accounts get <strong>1,000 tokens per day</strong>. Upgrade to Pro or Premium for unlimited access, faster models, and exclusive features.</p>
+                <div class="paywall-dev-notice">
+                    <span>🔧</span>
+                    <p>Zenith OX Premium is currently under development. Payment will be fully active in <strong>v2.8 — The Premium Update</strong>. Subscribe below to be notified at launch.</p>
+                </div>
+            </div>
+
+            <div class="paywall-grid">
+
+                <article class="paywall-card">
+                    <div class="paywall-card__tier">Basic</div>
+                    <div class="paywall-card__price">$0<span>/mo</span></div>
+                    <ul class="paywall-card__features">
+                        <li>✓ 1,000 tokens / day</li>
+                        <li>✓ Meta Llama &amp; GPT-4o</li>
+                        <li>✓ Standard workspace</li>
+                        <li>✓ Up to 3 projects</li>
+                        <li class="paywall-feat--locked">✗ Gemini 1.5 Flash &amp; Pro</li>
+                        <li class="paywall-feat--locked">✗ High thinking modes</li>
+                        <li class="paywall-feat--locked">✗ Priority support</li>
+                    </ul>
+                    <button class="btn-secondary paywall-card__btn" disabled>Current Plan</button>
+                </article>
+
+                <article class="paywall-card paywall-card--featured">
+                    <div class="paywall-card__badge">Most Popular</div>
+                    <div class="paywall-card__tier">Pro</div>
+                    <div class="paywall-card__price">$25<span>/mo</span></div>
+                    <ul class="paywall-card__features">
+                        <li>✓ Unlimited tokens</li>
+                        <li>✓ All models including Gemini</li>
+                        <li>✓ High &amp; High High thinking</li>
+                        <li>✓ Advanced workspace</li>
+                        <li>✓ Unlimited projects</li>
+                        <li>✓ Priority support</li>
+                        <li>✓ Early v2.8 access</li>
+                    </ul>
+                    <button class="btn-primary paywall-card__btn" onclick="showPaymentPending()">Upgrade to Pro</button>
+                </article>
+
+                <article class="paywall-card paywall-card--premium">
+                    <div class="paywall-card__tier">Premium</div>
+                    <div class="paywall-card__price">$50<span>/mo</span></div>
+                    <ul class="paywall-card__features">
+                        <li>✓ Everything in Pro</li>
+                        <li>✓ Custom AI agent config</li>
+                        <li>✓ API access</li>
+                        <li>✓ White-label workspace</li>
+                        <li>✓ Dedicated support</li>
+                        <li>✓ Android app (v2.7+)</li>
+                        <li>✓ First access v2.8</li>
+                    </ul>
+                    <button class="btn-primary paywall-card__btn" onclick="showPaymentPending()">Upgrade to Premium</button>
+                </article>
+
+            </div>
+
+            <div class="paywall-token-info">
+                <p>Your token usage today: <strong>{{ token_used | default(0) }} / 1,000</strong></p>
+                <div class="paywall-token-bar">
+                    <div class="paywall-token-bar__fill" style="width: {{ [(token_used | default(0)) / 10, 100] | min }}%"></div>
+                </div>
+                <p class="paywall-token-reset">Tokens reset every day at midnight UTC.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+    function showPaymentPending() {
+        var tc = document.getElementById('toastContainer');
+        var t = document.createElement('div');
+        t.className = 'toast error';
+        t.textContent = 'Zenith ox is under development to Pay, Please Comeback When You hear of release of V2.8 (The Premium update), Thank You';
+        tc.appendChild(t);
+        setTimeout(function() { t.classList.add('toast--hide'); setTimeout(function() { t.remove(); }, 400); }, 5000);
+    }
+    </script>
+</body>
+</html>

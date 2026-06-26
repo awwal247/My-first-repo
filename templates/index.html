@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX v2.6 — {{ mode.name }}</title>
+    <title>Zenith OX v2.7 — {{ mode.name }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,23 +14,51 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="workspace-page">
-    <div class="layout layout--workspace">
+
+    <!-- ── v2.7 Model Selector Bar (very top of page) ────────────── -->
+    <div class="v27-model-bar" id="v27ModelBar">
+        <div class="v27-model-bar__inner">
+            <span class="v27-model-bar__label">Model</span>
+            <select id="modelSelect" class="v27-model-select" aria-label="Choose model">
+                {% for key, item in available_chat_models.items() %}
+                <option value="{{ key }}"
+                    {% if key == selected_chat_model_key %}selected{% endif %}
+                    {% if item.get('premium_only') and not user_is_premium %}data-premium="true"{% endif %}>
+                    {{ item.label }}{% if item.get('premium_only') and not user_is_premium %} 🔒 Premium{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <span class="v27-model-bar__status" id="modelStatus">{{ available_chat_models[selected_chat_model_key].label }}</span>
+            <span class="v27-model-bar__sep"></span>
+            <span class="v27-token-counter" id="tokenCounterBar" title="Daily token usage">
+                🔢 <span id="tokenUsed">{{ token_used | default(0) }}</span> / 1,000 tokens today
+            </span>
+            {% if not user_is_premium %}
+            <a href="{{ url_for('main.paywall') }}" class="v27-upgrade-pill">✦ Upgrade</a>
+            {% endif %}
+        </div>
+        <!-- Toast notifications overlay on top of this bar -->
+        <div class="v27-model-bar__toast-zone" id="modelBarToastZone"></div>
+    </div>
+
+    <div class="layout layout--workspace" style="padding-top: 0;">
         <aside class="zh-sidebar" id="zh-sidebar">
             <div class="zh-sidebar-header zh-sidebar-header--brand">
                 <div>
-                    <div class="brand-mini">Zenith OX v2.6</div>
+                    <div class="brand-mini">Zenith OX v2.7</div>
                     <span class="zh-sidebar-title">Conversations</span>
                 </div>
-                <button id="zh-new-chat-btn" onclick="ChatHistory.startNewChat(window.ZENITH_MODE)">+ New Chat</button>
+                <button id="zh-new-chat-btn" onclick="ChatHistory.startNewChat(window.ZENITH_MODE)">+ New</button>
             </div>
             <div class="zh-search-box">
                 <input type="text" id="zh-search-input" placeholder="Search chats...">
             </div>
             <div class="workspace-sidebar-meta">
                 <span class="workspace-chip workspace-chip--solid">{{ mode.emoji }} {{ mode.name }}</span>
-                <span class="workspace-chip">v2.6 workspace</span>
+                <span class="workspace-chip">v2.7</span>
             </div>
             <div id="zh-chat-list"></div>
             <div class="workspace-sidebar-footer">
@@ -47,7 +75,7 @@
                 <div class="top-bar-left top-bar-left--workspace">
                     <button class="zh-sidebar-toggle-btn" id="zh-sidebar-toggle">☰</button>
                     <div>
-                        <div class="top-label">v2.6 workspace</div>
+                        <div class="top-label">v2.7 workspace</div>
                         <div id="modeIndicator">
                             <span class="mode-emoji">{{ mode.emoji }}</span>
                             <span>{{ mode.name }}</span>
@@ -55,19 +83,12 @@
                     </div>
                 </div>
                 <div class="top-bar-actions top-bar-actions--workspace">
-                    <div class="workspace-model-pill">
-                        <label for="modelSelect">Model</label>
-                        <select id="modelSelect" aria-label="Choose model">
-                            {% for key, item in available_chat_models.items() %}
-                            <option value="{{ key }}" {% if key == selected_chat_model_key %}selected{% endif %}>{{ item.label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
                     <a class="icon-link-btn" href="{{ url_for('main.notifications_page') }}" title="Notifications">🔔{% if unread_notifications %}<span class="icon-counter">{{ unread_notifications }}</span>{% endif %}</a>
                     <a class="icon-link-btn" href="{{ url_for('main.files_page') }}" title="Files">🗂️{% if file_count %}<span class="icon-counter">{{ file_count }}</span>{% endif %}</a>
                     <button class="icon-btn" id="memoryBtn" title="Memory sidebar">🧠</button>
                     <button class="icon-btn" id="exportBtn" title="Export chat">📥</button>
                     <div class="export-dropdown" id="exportDropdown">
+                        <button data-format="pdf">📄 PDF</button>
                         <button data-format="md">Markdown</button>
                         <button data-format="txt">Text</button>
                         <button data-format="json">JSON</button>
@@ -80,24 +101,24 @@
 
             <div id="chat-box">
                 <div class="message bot welcome welcome-panel">
-                    <div class="welcome-panel__eyebrow">Workspace ready</div>
+                    <div class="welcome-panel__eyebrow">Workspace ready · v2.7</div>
                     <h2>{{ mode.emoji }} {{ mode.name }}</h2>
-                    <p><strong>{{ greeting }}</strong> — Zenith OX v2.6 now includes a standard rounded composer, visible thinking trace, import sheet, exact download naming, and model switching.</p>
+                    <p><strong>{{ greeting }}</strong> — Zenith OX v2.7 adds a thinking level selector, token limiting, model access control, and a fresh chat on every login.</p>
                     <div class="welcome-pill-row">
-                        <span>Thinking trace</span>
-                        <span>Bottom attach sheet</span>
-                        <span>Drive & GitHub import</span>
-                        <span>Model switcher</span>
-                        <span>Export</span>
+                        <span>Thinking Levels</span>
+                        <span>Token Limiting</span>
+                        <span>PDF Export</span>
+                        <span>Model Switcher</span>
+                        <span>Edit Your Messages</span>
                     </div>
                     <div class="welcome-grid">
                         <article>
-                            <strong>Ask directly</strong>
-                            <p>Send research, code, writing, and workspace requests from the upgraded rounded prompt area.</p>
+                            <strong>Thinking Levels</strong>
+                            <p>Use the dropdown in the prompt bar to set Low, Medium, or High thinking mode. Controls the model temperature automatically.</p>
                         </article>
                         <article>
                             <strong>Attach from anywhere</strong>
-                            <p>Use camera, photos, files, Google Drive links, GitHub links, and code project upload from one place.</p>
+                            <p>Camera, photos, files, Google Drive, and GitHub public links all in one attach sheet.</p>
                         </article>
                     </div>
                 </div>
@@ -112,6 +133,29 @@
                         <form id="chatForm">
                             <textarea id="user-input" placeholder="Message {{ mode.name }}..." rows="1"></textarea>
                         </form>
+                        <!-- v2.7 Thinking Level Dropdown -->
+                        <div class="v27-think-wrap" id="thinkingWrap">
+                            <button class="v27-think-btn" id="thinkingToggle" title="Thinking level">🧠</button>
+                            <div class="v27-think-dropdown" id="thinkingDropdown">
+                                <div class="v27-think-dropdown__header">Thinking Level</div>
+                                <button class="v27-think-option" data-level="low" data-temp="0.2">
+                                    <span>🌡 Low</span>
+                                    <small>Precise, factual answers (temp 0.2)</small>
+                                </button>
+                                <button class="v27-think-option v27-think-option--active" data-level="medium" data-temp="1.4">
+                                    <span>⚡ Medium</span>
+                                    <small>Balanced creativity &amp; accuracy (temp 1.4) · Default</small>
+                                </button>
+                                <button class="v27-think-option {% if not user_is_premium %}v27-think-option--locked{% endif %}" data-level="high" data-temp="2.0" {% if not user_is_premium %}data-locked="true"{% endif %}>
+                                    <span>🔥 High</span>
+                                    <small>Creative &amp; exploratory (temp 2.0) {% if not user_is_premium %}· Pro only 🔒{% endif %}</small>
+                                </button>
+                                <button class="v27-think-option {% if not user_is_premium %}v27-think-option--locked{% endif %}" data-level="high_high" data-temp="2.4" {% if not user_is_premium %}data-locked="true"{% endif %}>
+                                    <span>🚀 High High</span>
+                                    <small>Maximum exploration (temp 2.4) {% if not user_is_premium %}· Pro only 🔒{% endif %}</small>
+                                </button>
+                            </div>
+                        </div>
                         <button id="micBtn" title="Voice input" aria-label="Voice input">🎤</button>
                         <button id="sendBtn" title="Send" aria-label="Send">↑</button>
                     </div>
@@ -119,7 +163,7 @@
                         <div class="toolbar-left toolbar-left--v25">
                             <span id="fileCount"></span>
                             <span class="toolbar-divider"></span>
-                            <span id="modelStatus">{{ available_chat_models[selected_chat_model_key].label }}</span>
+                            <span id="thinkingStatusLabel" class="v27-think-label">⚡ Medium thinking</span>
                         </div>
                         <div class="toolbar-right toolbar-right--v25">
                             <span class="toolbar-hint">Enter to send · Shift+Enter for new line</span>
@@ -136,12 +180,12 @@
                 <p>{{ mode.tagline }}</p>
             </section>
             <section class="rail-card rail-card--workspace">
-                <span class="rail-card__eyebrow">What changed in v2.6</span>
+                <span class="rail-card__eyebrow">What's new in v2.7</span>
                 <div class="mini-list">
-                    <div class="mini-list__item"><strong>Scroll fixed</strong><span>Mobile &amp; desktop scrolling now works correctly on all pages.</span></div>
-                    <div class="mini-list__item"><strong>Thinking trace</strong><span>A visible pre-response status appears in the conversation before the answer lands.</span></div>
-                    <div class="mini-list__item"><strong>Real imports</strong><span>Google Drive and GitHub public links can be pulled straight into the pending attachments queue.</span></div>
-                    <div class="mini-list__item"><strong>Model control</strong><span>Switch between Meta Llama, GPT OSS 120B, Gemini Flash, and Gemini Pro from the workspace.</span></div>
+                    <div class="mini-list__item"><strong>Thinking levels</strong><span>Low / Medium / High / High High control model temperature.</span></div>
+                    <div class="mini-list__item"><strong>Token limit</strong><span>Free accounts: 1,000 tokens/day. Upgrade for unlimited.</span></div>
+                    <div class="mini-list__item"><strong>Edit your messages</strong><span>Click any of your sent messages to edit and re-send.</span></div>
+                    <div class="mini-list__item"><strong>PDF export</strong><span>Download the full conversation as a styled PDF.</span></div>
                 </div>
             </section>
             <section class="rail-card rail-card--workspace">
@@ -208,6 +252,8 @@
     <script>
         window.ZENITH_MODE = "{{ mode_key }}";
         window.ZENITH_SELECTED_MODEL = "{{ selected_chat_model_key }}";
+        window.ZENITH_USER_PREMIUM = {{ 'true' if user_is_premium else 'false' }};
+        window.ZENITH_TOKEN_USED = {{ token_used | default(0) }};
     </script>
     <script src="{{ url_for('static', filename='js/chat_history_redesign.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

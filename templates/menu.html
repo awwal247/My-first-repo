@@ -3,123 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX v2.6 — Workspace Dashboard</title>
+    <title>Zenith OX v2.7 — Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="dashboard-page">
-    {% if show_v21_disclaimer %}
-    <div class="v21-modal-backdrop" id="v21ModalBackdrop">
-        <div class="v21-modal">
-            <h2>Zenith OX v2.6 — Scroll &amp; mobile fix</h2>
-            <p class="v21-modal-subtitle">The dashboard, chat shell, profile, settings, files, history, and notifications surfaces now work as a connected product experience.</p>
-            <ul class="v21-feature-list">
-                <li>✨ Dynamic dashboard metrics and recent activity panels</li>
-                <li>🗂️ Functional files vault with uploads and downloads</li>
-                <li>🔔 Real notification center and account settings flow</li>
-                <li>💬 Chat history management wired into the upgraded workspace</li>
-            </ul>
-            <button class="v21-modal-close" id="v21ModalClose">Enter workspace</button>
-        </div>
-    </div>
-    <script>
-        document.getElementById('v21ModalClose').addEventListener('click', function () {
-            document.getElementById('v21ModalBackdrop').remove();
-        });
-    </script>
-    {% endif %}
 
-    <div class="dashboard-shell">
-        <aside class="dashboard-sidebar">
-            <a href="/" class="brand-mark">
+    <div class="v27-dashboard-shell">
+
+        <!-- ── Left Sidebar: AI Models + Projects ───────────────────── -->
+        <aside class="v27-dash-sidebar">
+
+            <div class="v27-dash-brand">
                 <span class="brand-mark__orb"></span>
-                <span>
-                    <strong>Zenith OX</strong>
-                    <small>Neural workspace</small>
-                </span>
-            </a>
-
-            <div class="dashboard-user-card">
-                <div class="dashboard-user-card__avatar" style="background: {{ user.avatar_color or '#7c5cff' }};">{{ username[:1]|upper }}</div>
                 <div>
-                    <strong>{{ username }}</strong>
-                    <span>{{ greeting }}</span>
+                    <strong>Zenith OX</strong>
+                    <small>v2.7 workspace</small>
                 </div>
             </div>
 
-            <nav class="dashboard-nav">
-                <a href="{{ url_for('main.menu') }}" class="is-active">Overview</a>
+            <div class="v27-dash-user">
+                <div class="dashboard-user-card__avatar" style="background: {{ user.avatar_color or '#7c5cff' }};">{{ username[:1]|upper }}</div>
+                <div>
+                    <strong>{{ username }}</strong>
+                    <span>{% if user_is_premium %}Pro / Premium{% else %}Free · 1k tokens/day{% endif %}</span>
+                </div>
+            </div>
+
+            <!-- AI Models Section -->
+            <div class="v27-sidebar-section">
+                <div class="v27-sidebar-section__label">AI Models</div>
+                <div class="v27-model-list">
+                    {% for key, item in available_chat_models.items() %}
+                    <a href="{{ url_for('main.select_mode', mode_key=settings.default_mode) }}?model={{ key }}"
+                       class="v27-model-item {% if item.get('premium_only') and not user_is_premium %}v27-model-item--locked{% endif %}">
+                        <span class="v27-model-item__dot"></span>
+                        <div>
+                            <strong>{{ item.label }}</strong>
+                            {% if item.get('premium_only') and not user_is_premium %}
+                            <small>Premium only 🔒</small>
+                            {% else %}
+                            <small>Available</small>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% if not user_is_premium %}
+                <a href="{{ url_for('main.paywall') }}" class="v27-upgrade-pill" style="display:block;margin-top:10px;">✦ Unlock all models</a>
+                {% endif %}
+            </div>
+
+            <!-- Project Groups Section -->
+            <div class="v27-sidebar-section">
+                <div class="v27-sidebar-section__label">
+                    Projects
+                    <button class="v27-proj-new-btn" id="newProjectBtn" title="New project">+</button>
+                </div>
+                <div class="v27-project-list" id="projectList">
+                    {% if projects %}
+                        {% for project in projects %}
+                        <div class="v27-project-item" data-project-id="{{ project.id }}">
+                            <div class="v27-project-item__header">
+                                <span class="v27-project-item__name">{{ project.name }}</span>
+                                <span class="v27-project-item__count">{{ project.chats | length }}/3 chats</span>
+                            </div>
+                            <div class="v27-project-chats">
+                                {% for chat in project.chats %}
+                                <a href="{{ url_for('main.open_chat', chat_id=chat.id) }}" class="v27-project-chat">
+                                    <span>{{ chat.title }}</span>
+                                    <small>{{ chat.created_at.strftime('%b %d, %I:%M %p') if chat.created_at else '' }}</small>
+                                </a>
+                                {% endfor %}
+                                {% if project.chats | length < 3 %}
+                                <button class="v27-project-add-chat" data-project-id="{{ project.id }}">+ Add chat</button>
+                                {% else %}
+                                <span class="v27-project-full">Group full (3/3)</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="v27-project-empty">
+                        <p>No projects yet.</p>
+                        <p>Create a project to group up to 3 related chats.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- App Info -->
+            <div class="v27-sidebar-section v27-sidebar-app-info">
+                <div class="v27-sidebar-section__label">About</div>
+                <ul class="v27-app-info-list">
+                    <li>Version: <strong>2.7</strong></li>
+                    <li>Backend: <strong>Python Flask</strong></li>
+                    <li>Models: <strong>OpenRouter</strong></li>
+                    <li>Search: <strong>Exo AI + Tavily</strong></li>
+                    <li>Auth: <strong>Google OAuth</strong></li>
+                    <li>DB: <strong>Supabase</strong></li>
+                </ul>
+            </div>
+
+            <nav class="v27-dash-nav">
+                <a href="{{ url_for('main.menu') }}" class="is-active">Dashboard</a>
                 <a href="{{ url_for('main.profile') }}">Profile</a>
                 <a href="{{ url_for('main.settings') }}">Settings</a>
                 <a href="{{ url_for('main.files_page') }}">Files</a>
                 <a href="{{ url_for('main.history_center') }}">History</a>
-                <a href="{{ url_for('main.notifications_page') }}">Notifications{% if unread_notifications %} · {{ unread_notifications }}{% endif %}</a>
-                <a href="{{ url_for('auth.logout') }}">Logout</a>
+                <a href="{{ url_for('main.notifications_page') }}">Notifications{% if unread_notifications %} <span class="icon-counter">{{ unread_notifications }}</span>{% endif %}</a>
+                <a href="{{ url_for('auth.logout') }}" class="v27-dash-nav__logout">Logout</a>
             </nav>
 
-            <div class="dashboard-sidebar__panel">
-                <span class="dashboard-sidebar__eyebrow">Default launch mode</span>
-                <strong>{{ settings.default_mode|replace('_', ' ')|title }}</strong>
-                <p>Your saved workspace preference is used whenever you re-enter the app without an active mode selected.</p>
-            </div>
         </aside>
 
-        <main class="dashboard-main">
-            <section class="dashboard-hero" id="overview">
+        <!-- ── Main Dashboard Content ────────────────────────────────── -->
+        <main class="v27-dash-main">
+
+            <section class="dashboard-hero">
                 <div>
-                    <span class="eyebrow-pill">Workspace dashboard</span>
+                    <span class="eyebrow-pill">Dashboard · v2.7</span>
                     <h1>{{ greeting }} 👋</h1>
-                    <p>Everything in the refreshed UI is now connected to real backend behavior: profile management, settings, notifications, chat history, and a persistent file vault.</p>
+                    <p>Your tokens, projects, and workspace all in one place.</p>
                     <div class="dashboard-hero__actions">
-                        <a href="{{ url_for('main.select_mode', mode_key=settings.default_mode) }}" class="btn-primary">Open default workspace</a>
-                        <a href="{{ url_for('main.files_page') }}" class="btn-secondary">Manage files</a>
+                        <a href="{{ url_for('main.select_mode', mode_key=settings.default_mode) }}" class="btn-primary">Open workspace</a>
+                        <a href="{{ url_for('main.files_page') }}" class="btn-secondary">Files</a>
+                        {% if not user_is_premium %}
+                        <a href="{{ url_for('main.paywall') }}" class="btn-secondary">✦ Upgrade</a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="dashboard-hero__art">
                     <div class="dashboard-planet"></div>
-                    <div class="dashboard-hero__badge">Backend connected</div>
+                    <div class="dashboard-hero__badge">v2.7 active</div>
                 </div>
+            </section>
+
+            <!-- Token usage card -->
+            <section class="v27-token-card">
+                <div class="v27-token-card__info">
+                    <span class="rail-card__eyebrow">Daily Token Usage</span>
+                    <strong>{{ token_used | default(0) }} / 1,000 tokens</strong>
+                    <p>{% if user_is_premium %}Unlimited on your plan.{% else %}Free plan limit. <a href="{{ url_for('main.paywall') }}">Upgrade for unlimited →</a>{% endif %}</p>
+                </div>
+                <div class="paywall-token-bar v27-token-bar">
+                    <div class="paywall-token-bar__fill" style="width: {{ [(token_used | default(0)) / 10, 100] | min }}%"></div>
+                </div>
+                <p class="paywall-token-reset">Resets at midnight UTC.</p>
             </section>
 
             <section class="dashboard-stats">
                 <article>
                     <span>Total chats</span>
                     <strong>{{ dashboard_summary.chat_count or 0 }}</strong>
-                    <small>{{ dashboard_summary.chats_this_week or 0 }} active in the last 7 days</small>
+                    <small>{{ dashboard_summary.chats_this_week or 0 }} this week</small>
                 </article>
                 <article>
                     <span>Memory entries</span>
                     <strong>{{ dashboard_summary.memory_count or 0 }}</strong>
-                    <small>Conversation snippets available for retrieval</small>
+                    <small>Available for retrieval</small>
                 </article>
                 <article>
                     <span>Vault files</span>
                     <strong>{{ dashboard_summary.file_count or 0 }}</strong>
-                    <small>{{ unread_notifications or 0 }} unread notifications across the workspace</small>
+                    <small>{{ unread_notifications or 0 }} unread notifications</small>
                 </article>
-            </section>
-
-            <section class="quick-action-grid" id="activity">
-                <a class="quick-action-card quick-action-card--link" href="{{ url_for('main.profile') }}">
-                    <h3>Profile center</h3>
-                    <p>Update your display name, bio, avatar color, and account identity details.</p>
-                </a>
-                <a class="quick-action-card quick-action-card--link" href="{{ url_for('main.settings') }}">
-                    <h3>Workspace settings</h3>
-                    <p>Set your default mode, notification preferences, password, and behavior flags.</p>
-                </a>
-                <a class="quick-action-card quick-action-card--link" href="{{ url_for('main.history_center') }}">
-                    <h3>History control</h3>
-                    <p>Open, pin, search, and delete prior chat sessions from one screen.</p>
-                </a>
             </section>
 
             <section class="mode-gallery" id="modes">
                 <div class="section-heading section-heading--left compact">
                     <span class="eyebrow-pill">Choose a mode</span>
-                    <h2>Specialist entry points</h2>
+                    <h2>Specialist workspaces</h2>
                 </div>
                 <div class="modes-grid modes-grid--rich">
                     {% for key, mode in modes.items() %}
@@ -135,40 +191,6 @@
             </section>
         </main>
 
-        <aside class="dashboard-rail">
-            <section class="rail-card">
-                <span class="rail-card__eyebrow">Recent chats</span>
-                <h3>Jump back in</h3>
-                {% if recent_chats %}
-                <div class="mini-list">
-                    {% for chat in recent_chats %}
-                    <a href="{{ url_for('main.open_chat', chat_id=chat.id) }}" class="mini-list__item">
-                        <strong>{{ chat.title }}</strong>
-                        <span>{{ chat.mode|replace('_', ' ')|title }} · {{ chat.message_count or 0 }} messages</span>
-                    </a>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p>No chat history yet. Pick a mode to start the first conversation.</p>
-                {% endif %}
-            </section>
-            <section class="rail-card">
-                <span class="rail-card__eyebrow">Recent notifications</span>
-                <h3>Workspace events</h3>
-                {% if recent_notifications %}
-                <div class="mini-list">
-                    {% for notification in recent_notifications %}
-                    <a href="{{ notification.action_url or url_for('main.notifications_page') }}" class="mini-list__item {% if not notification.is_read %}mini-list__item--unread{% endif %}">
-                        <strong>{{ notification.title }}</strong>
-                        <span>{{ notification.body }}</span>
-                    </a>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p>No notifications yet. Actions across the workspace will appear here.</p>
-                {% endif %}
-            </section>
-        </aside>
     </div>
 
     <nav class="mobile-dock">
@@ -177,5 +199,26 @@
         <a href="{{ url_for('main.notifications_page') }}">Alerts</a>
         <a href="{{ url_for('auth.logout') }}">Exit</a>
     </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <script>
+    (function() {
+        var flashed = {{ messages | tojson }};
+        function showToast(msg, type) {
+            var tc = document.getElementById('toastContainer');
+            var t = document.createElement('div');
+            t.className = 'toast ' + (type || 'info');
+            t.textContent = msg;
+            tc.appendChild(t);
+            setTimeout(function() { t.classList.add('toast--hide'); setTimeout(function() { t.remove(); }, 400); }, 5000);
+        }
+        flashed.forEach(function(m) { showToast(m[1], m[0]); });
+    })();
+    </script>
+    {% endif %}
+    {% endwith %}
 </body>
 </html>

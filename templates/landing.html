@@ -3,174 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX v2.6 — Standard AI Workspace</title>
+    <title>Zenith OX — AI Workspace</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="landing-page">
-    <header class="site-header">
+<body class="landing-page landing-page--minimal">
+
+    <!-- Minimal header: brand + sign in only -->
+    <header class="site-header site-header--minimal">
         <div class="site-header__inner">
             <a href="/" class="brand-mark">
                 <span class="brand-mark__orb"></span>
-                <span>
-                    <strong>Zenith OX</strong>
-                    <small>v2.6 standard workspace</small>
-                </span>
+                <span><strong>Zenith OX</strong></span>
             </a>
-            <nav class="site-nav">
-                <a href="#features">Features</a>
-                <a href="#workspace">Workspace</a>
-                <a href="#update">v2.6</a>
-            </nav>
-            <div class="site-header__actions">
-                <a href="/login" class="btn-ghost">Sign in</a>
-                <a href="/register" class="btn-primary">Launch app</a>
-            </div>
+            <a href="{{ url_for('auth.login_page') }}" class="btn-ghost">Sign in</a>
         </div>
     </header>
 
-    <main class="landing-main landing-main--rich">
-        <section class="hero hero--rich hero--v25">
-            <div class="hero-copy">
-                <span class="eyebrow-pill">Zenith OX v2.6 update</span>
-                <h1>A cleaner, more standard AI workspace with better attachments, visible thinking, and model control.</h1>
-                <p>
-                    Zenith OX v2.6 upgrades the product to feel closer to a modern professional AI workspace:
-                    rounded prompt bar, bottom attachment sheet, GitHub and Google Drive import, model switching,
-                    exact file naming, and a more polished landing-to-chat journey.
-                </p>
-                <div class="hero-cta hero-cta--stacked">
-                    <a href="/register" class="btn-primary btn-primary--xl">Create account</a>
-                    <a href="/login" class="btn-secondary btn-secondary--xl">Open workspace</a>
-                </div>
-                <div class="hero-stats hero-stats--glass">
-                    <div>
-                        <strong>v2.6</strong>
-                        <span>Scroll &amp; UI fix</span>
-                    </div>
-                    <div>
-                        <strong>5 ways</strong>
-                        <span>to attach content</span>
-                    </div>
-                    <div>
-                        <strong>4 models</strong>
-                        <span>available in-chat</span>
-                    </div>
-                    <div>
-                        <strong>Exact</strong>
-                        <span>download naming</span>
-                    </div>
-                </div>
+    <!-- Hero: perfectly centered, minimal text, two CTAs -->
+    <main class="landing-hero-center">
+        <div class="landing-hero-center__inner">
+            <h1 class="landing-hero-title">The Workflow with multiple mind</h1>
+            <p class="landing-hero-sub">One workspace. Many AI minds. Built for deep work.</p>
+            <div class="landing-hero-cta">
+                <a href="{{ url_for('auth.register') }}" class="btn-primary btn-primary--xl">Try Now</a>
+                <a href="{{ url_for('auth.login_page') }}" class="btn-ghost btn-ghost--xl">Sign In</a>
             </div>
-
-            <div class="hero-visual">
-                <div class="hero-orb"></div>
-                <div class="hero-panel hero-panel--primary">
-                    <div class="hero-panel__header">
-                        <span class="status-dot"></span>
-                        <span>Workspace highlights</span>
-                    </div>
-                    <div class="hero-panel__metrics">
-                        <article>
-                            <small>Prompt area</small>
-                            <strong>Rounded plus-button composer</strong>
-                            <span>Cleaner, more familiar chat entry experience</span>
-                        </article>
-                        <article>
-                            <small>Attachment flow</small>
-                            <strong>Bottom-sheet import panel</strong>
-                            <span>Camera, photo, files, Drive, GitHub, and code ZIP</span>
-                        </article>
-                    </div>
-                </div>
-                <div class="hero-stack">
-                    <div class="hero-mini-card">
-                        <span>Thinking</span>
-                        <strong>Visible pre-response trace in the conversation</strong>
-                    </div>
-                    <div class="hero-mini-card">
-                        <span>Models</span>
-                        <strong>Llama, GPT OSS 120B, Gemini Flash, Gemini Pro</strong>
-                    </div>
-                    <div class="hero-mini-card">
-                        <span>Developer UX</span>
-                        <strong>Exact output names for generated files and projects</strong>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="feature-section" id="features">
-            <div class="section-heading">
-                <span class="eyebrow-pill">Platform highlights</span>
-                <h2>Everything requested for a more regular, production-style workspace is now built in.</h2>
-            </div>
-            <div class="feature-bento">
-                <article class="feature-card feature-card--wide">
-                    <h3>Popular-AI style composer</h3>
-                    <p>The attachment action now lives inside the rounded prompt area as a plus button, making the workspace feel more familiar and more polished.</p>
-                </article>
-                <article class="feature-card">
-                    <h3>Thinking trace</h3>
-                    <p>Users now see a visible pre-answer thinking status inside the chat before the full response appears.</p>
-                </article>
-                <article class="feature-card">
-                    <h3>Real import actions</h3>
-                    <p>Camera, photo, files, Google Drive public links, and GitHub public links feed directly into the attachment queue.</p>
-                </article>
-                <article class="feature-card">
-                    <h3>Model switcher</h3>
-                    <p>Swap models without leaving the active chat workspace.</p>
-                </article>
-                <article class="feature-card feature-card--glow">
-                    <h3>Sharper product surface</h3>
-                    <p>Landing, workspace, README guidance, and developer download behavior are aligned under one stronger v2.6 release.</p>
-                </article>
-            </div>
-        </section>
-
-        <section class="workspace-showcase" id="workspace">
-            <div class="section-heading section-heading--left">
-                <span class="eyebrow-pill">Workspace system</span>
-                <h2>A more standard layout with better control and fewer clicks.</h2>
-            </div>
-            <div class="workspace-grid">
-                <article class="workspace-card workspace-card--large">
-                    <span class="workspace-card__tag">Chat</span>
-                    <h3>Focused central conversation canvas</h3>
-                    <p>Cleaner top bar, integrated model switcher, visible thinking trace, and a bottom composer that keeps attachments close to where the user types.</p>
-                    <ul>
-                        <li>Rounded prompt area with inline plus button</li>
-                        <li>Bottom attachment sheet with actionable import sources</li>
-                        <li>More predictable download and file-return naming</li>
-                    </ul>
-                </article>
-                <article class="workspace-card">
-                    <span class="workspace-card__tag">Files</span>
-                    <h3>Bring context in faster</h3>
-                    <p>Users can attach content from local sources and supported public links without leaving the main workflow.</p>
-                </article>
-                <article class="workspace-card" id="update">
-                    <span class="workspace-card__tag">v2.6</span>
-                    <h3>Scroll &amp; mobile polish</h3>
-                    <p>v2.6 fixes scrolling on all pages (mobile &amp; desktop), tightens the mobile layout, and improves the overall professional finish.</p>
-                </article>
-            </div>
-        </section>
+        </div>
     </main>
 
-    <footer class="landing-footer landing-footer--rich">
-        <div>
-            <strong>Zenith OX</strong>
-            <p>Professional AI workspace with a cleaner frontend and stronger attachment workflow in v2.5.</p>
-        </div>
-        <div class="landing-footer__links">
-            <a href="/login">Sign in</a>
-            <a href="/register">Create account</a>
-            <a href="#features">Features</a>
-        </div>
+    <!-- Toast container (for any flash messages) -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <footer class="landing-footer landing-footer--minimal">
+        <span>Zenith OX v2.7</span>
     </footer>
+
 </body>
 </html>

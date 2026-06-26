@@ -1,4 +1,9 @@
-"""Authentication routes for Zenith OX."""
+"""Authentication routes for Zenith OX — v2.7.
+
+Changes vs v2.6:
+  - send_login_notification() called after every successful sign-in
+    (email/password login, Google OAuth, new Google account creation).
+"""
 
 from flask import (
     Blueprint,
@@ -25,6 +30,29 @@ from app.utils.auth import display_name_from_email, valid_email
 
 auth_bp = Blueprint("auth", __name__)
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _send_login_notification(user_id: str) -> None:
+    """
+    Fire a login-security notification immediately after a successful sign-in.
+    Delegates to python_additions.login_notify so all detection logic lives there.
+    Fails silently — a notification error must never break the login flow.
+    """
+    try:
+        from python_additions.login_notify import send_login_notification
+        from app.services.db import get_supabase_client  # adjust if your project exposes supabase differently
+        sb = get_supabase_client()
+        send_login_notification(sb, user_id=user_id)
+    except Exception as exc:
+        current_app.logger.warning("[auth] Login notification failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Registration
+# ---------------------------------------------------------------------------
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -85,6 +113,10 @@ def register():
     return redirect(url_for("main.menu"))
 
 
+# ---------------------------------------------------------------------------
+# Login (email / password)
+# ---------------------------------------------------------------------------
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login_page():
     if request.method == "GET":
@@ -112,8 +144,16 @@ def login_page():
     session["user_id"] = str(user["id"])
     session["display_name"] = user.get("display_name") or display_name_from_email(email)
     session["show_v21_disclaimer"] = True
+
+    # v2.7 — Security notification on every login
+    _send_login_notification(str(user["id"]))
+
     return redirect(url_for("main.menu"))
 
+
+# ---------------------------------------------------------------------------
+# Google OAuth
+# ---------------------------------------------------------------------------
 
 @auth_bp.route("/login/google")
 def login_google():
@@ -150,6 +190,8 @@ def auth_google_callback():
             session["user_id"] = str(google_user["id"])
             session["display_name"] = google_user.get("display_name") or display_name_from_email(email)
             session["show_v21_disclaimer"] = True
+            # v2.7 — Security notification on every login
+            _send_login_notification(str(google_user["id"]))
             return redirect(url_for("main.menu"))
 
         email_user = db_find_user_by_email(email)
@@ -158,6 +200,8 @@ def auth_google_callback():
             session["user_id"] = str(email_user["id"])
             session["display_name"] = email_user.get("display_name") or display_name_from_email(email)
             session["show_v21_disclaimer"] = True
+            # v2.7 — Security notification on every login
+            _send_login_notification(str(email_user["id"]))
             return redirect(url_for("main.menu"))
 
         new_user = db_create_user(email=email, display_name=name, password_hash=None, google_id=google_id)
@@ -171,11 +215,18 @@ def auth_google_callback():
         session["user_id"] = str(new_user["id"])
         session["display_name"] = new_user["display_name"]
         session["show_v21_disclaimer"] = True
+        # v2.7 — Security notification on first Google sign-in too
+        _send_login_notification(str(new_user["id"]))
         return redirect(url_for("main.menu"))
+
     except RuntimeError as exc:
         flash(f"Database error during Google sign-in: {exc}", "error")
         return redirect(url_for("auth.login_page"))
 
+
+# ---------------------------------------------------------------------------
+# Logout / delete
+# ---------------------------------------------------------------------------
 
 @auth_bp.route("/logout", methods=["GET", "POST"])
 def logout():

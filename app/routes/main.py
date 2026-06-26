@@ -1,15 +1,15 @@
 """
 app/routes/main.py
 ==================
-UI navigation routes (authenticated):
-  GET /chat -- chat interface (requires login + mode)
-  GET /menu, /dashboard -- dashboard / AI mode selection
-  GET /select-mode/<mode_key> -- set the active AI mode in the session
-  GET/POST /profile -- manage profile information
-  GET/POST /settings -- manage workspace preferences
-  GET/POST /files -- upload and manage vault files
-  GET /history-center -- chat history management surface
-  GET /notifications -- notification center
+UI navigation routes (authenticated) — Zenith OX v2.7.
+
+New in v2.7:
+  GET  /paywall         -- upgrade / pricing page (shown when token limit hit or premium model blocked)
+  POST /subscribe       -- payment placeholder (hardcoded v2.7 dev error)
+  GET  /api/token-status -- JSON: current token usage for this user
+  GET  /chat            -- clears last-chat session so dashboard always opens a fresh chat
+
+All other routes unchanged from v2.6.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from __future__ import annotations
 from flask import (
     Blueprint,
     flash,
+    jsonify,
     make_response,
     redirect,
     render_template,
@@ -91,6 +92,17 @@ def _dashboard_context(user: dict) -> dict:
     }
 
 
+def _get_supabase():
+    """Return the Supabase client stored on the app (adjust if your project exposes it differently)."""
+    from flask import current_app
+    return getattr(current_app, "supabase", None)
+
+
+def _is_premium(user: dict) -> bool:
+    """Return True if the user has Pro or Premium access."""
+    return bool(user.get("is_premium", False))
+
+
 # ---------------------------------------------------------------------------
 # Core app pages
 # ---------------------------------------------------------------------------
@@ -100,6 +112,10 @@ def index():
     user, err = _require_auth_redirect()
     if err:
         return err
+
+    # v2.7 — Always open a brand-new chat; do NOT restore the last session chat.
+    session.pop("current_chat_id", None)
+
     if "ai_mode" not in session:
         settings = db_get_or_create_user_settings(str(user["id"]))
         session["ai_mode"] = settings.get("default_mode", "researcher")
@@ -109,12 +125,24 @@ def index():
     username = user.get("display_name") or session["user_id"]
     greeting = time_based_greeting(username)
     summary = db_get_dashboard_summary(str(user["id"]))
+    is_premium = _is_premium(user)
 
-    available_chat_models = get_chat_models_for_ui()
+    # v2.7 — Pass is_premium so the template can lock premium-only models
+    available_chat_models = get_chat_models_for_ui(is_premium=is_premium)
     selected_chat_model_key = session.get("chat_model_key", DEFAULT_CHAT_MODEL_KEY)
     if selected_chat_model_key not in available_chat_models:
         selected_chat_model_key = DEFAULT_CHAT_MODEL_KEY
         session["chat_model_key"] = selected_chat_model_key
+
+    # v2.7 — Token usage for the header display
+    token_used = 0
+    try:
+        from python_additions.token_tracker import get_today_token_usage
+        sb = _get_supabase()
+        if sb:
+            token_used = get_today_token_usage(sb, str(user["id"]))
+    except Exception:
+        pass
 
     return render_template(
         "index.html",
@@ -126,6 +154,8 @@ def index():
         file_count=summary.get("file_count", 0),
         available_chat_models=available_chat_models,
         selected_chat_model_key=selected_chat_model_key,
+        token_used=token_used,
+        user_is_premium=is_premium,
     )
 
 
@@ -136,17 +166,31 @@ def menu():
     if err:
         return err
 
+    is_premium = _is_premium(user)
     ctx = _dashboard_context(user)
     show_v21_disclaimer = session.pop("show_v21_disclaimer", False)
+
+    # v2.7 — Pass model list and token usage to dashboard sidebar
+    available_chat_models = get_chat_models_for_ui(is_premium=is_premium)
+    token_used = 0
+    try:
+        from python_additions.token_tracker import get_today_token_usage
+        sb = _get_supabase()
+        if sb:
+            token_used = get_today_token_usage(sb, str(user["id"]))
+    except Exception:
+        pass
+
     return render_template(
         "menu.html",
         modes=AI_MODES,
         show_v21_disclaimer=show_v21_disclaimer,
+        user_is_premium=is_premium,
+        available_chat_models=available_chat_models,
+        token_used=token_used,
+        projects=[],
         **ctx,
     )
-
-
-@main_bp.route("/select-mode/<mode_key>")
 def select_mode(mode_key: str):
     user, err = _require_auth_redirect()
     if err:
@@ -181,6 +225,84 @@ def open_chat(chat_id: str):
     session["ai_mode"] = chat.get("mode", "researcher")
     db_restore_chat(chat_id)
     return redirect(url_for("main.index"))
+
+
+# ---------------------------------------------------------------------------
+# v2.7 — Paywall / pricing page
+# ---------------------------------------------------------------------------
+
+@main_bp.route("/paywall")
+def paywall():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+
+    token_used = 0
+    try:
+        from python_additions.token_tracker import get_today_token_usage
+        sb = _get_supabase()
+        if sb:
+            token_used = get_today_token_usage(sb, str(user["id"]))
+    except Exception:
+        pass
+
+    return render_template(
+        "paywall.html",
+        token_used=token_used,
+        user_is_premium=_is_premium(user),
+        **_dashboard_context(user),
+    )
+
+
+@main_bp.route("/subscribe", methods=["POST"])
+def subscribe():
+    """
+    v2.7 payment placeholder.
+    Real payment will be wired in v2.8. Until then, every attempt returns
+    the hardcoded development message.
+    """
+    user, err = _require_auth_redirect()
+    if err:
+        return jsonify({"ok": False, "error": "Not authenticated"}), 401
+
+    return jsonify({
+        "ok": False,
+        "error": (
+            "Zenith ox is under development to Pay, Please Comeback When You hear of "
+            "release of V2.8 (The Premium update), Thank You"
+        ),
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# v2.7 — Token status API (called by frontend to refresh usage counter)
+# ---------------------------------------------------------------------------
+
+@main_bp.route("/api/token-status")
+def token_status():
+    if "user_id" not in session:
+        return jsonify({"ok": False, "error": "Not authenticated"}), 401
+
+    user = db_find_user_by_id(session["user_id"])
+    if not user:
+        return jsonify({"ok": False, "error": "User not found"}), 401
+
+    is_premium = _is_premium(user)
+    used = 0
+    try:
+        from python_additions.token_tracker import get_today_token_usage, FREE_DAILY_LIMIT
+        sb = _get_supabase()
+        if sb:
+            used = get_today_token_usage(sb, str(user["id"]))
+        return jsonify({
+            "ok": True,
+            "used": used,
+            "limit": None if is_premium else FREE_DAILY_LIMIT,
+            "is_premium": is_premium,
+            "allowed": is_premium or used < FREE_DAILY_LIMIT,
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
 
 
 # ---------------------------------------------------------------------------
