@@ -9,33 +9,36 @@
    panels, soft glows and a violet→blue accent gradient.
    ────────────────────────────────────────────────────────────── */
 :root {
-  --bg: #0a0a13;
-  --fg: #ececf1;
-  --fg-muted: #9ca0ae;
+  /* Zenith OX v2.8 — Deep-slate glass, indigo→teal accent, Sora/Inter */
+  --bg: #070b16;
+  --fg: #eef1f8;
+  --fg-muted: #9aa3b8;
 
-  --sidebar-bg: rgba(22, 22, 35, 0.55);
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: rgba(15, 21, 38, 0.62);
+  --sidebar-border: rgba(255, 255, 255, 0.07);
 
   --chat-bg: transparent;
 
-  --msg-user-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --msg-user-bg: linear-gradient(135deg, #6366f1, #22d3ee);
   --msg-user-fg: #ffffff;
-  --msg-bot-bg: rgba(255, 255, 255, 0.04);
-  --msg-bot-fg: #ececf1;
+  --msg-bot-bg: rgba(255, 255, 255, 0.035);
+  --msg-bot-fg: #eef1f8;
 
-  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-bg: rgba(255, 255, 255, 0.045);
   --input-border: rgba(255, 255, 255, 0.10);
 
-  --accent: #818cf8;
-  --accent-hover: #a5b4fc;
-  --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
-  --accent-light: rgba(129, 140, 248, 0.16);
+  --accent: #7c8cff;
+  --accent-hover: #a6b2ff;
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+  --accent-light: rgba(99, 102, 241, 0.16);
 
-  --welcome-bg: rgba(129, 140, 248, 0.08);
+  --teal: #2dd4bf;
+
+  --welcome-bg: rgba(99, 102, 241, 0.08);
   --welcome-fg: #c7d2fe;
 
-  --code-bg: rgba(0, 0, 0, 0.35);
-  --code-fg: #e4e4e7;
+  --code-bg: rgba(2, 6, 18, 0.55);
+  --code-fg: #e4e8f2;
 
   --error-bg: rgba(239, 68, 68, 0.12);
   --error-fg: #fca5a5;
@@ -43,15 +46,18 @@
   --btn-clear-bg: rgba(255, 255, 255, 0.06);
   --btn-clear-fg: #d1d5db;
 
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-bg-strong: rgba(255, 255, 255, 0.09);
-  --glass-border: rgba(255, 255, 255, 0.09);
-  --glass-blur: 18px;
+  --glass-bg: rgba(255, 255, 255, 0.045);
+  --glass-bg-strong: rgba(255, 255, 255, 0.085);
+  --glass-border: rgba(255, 255, 255, 0.085);
+  --glass-blur: 20px;
 
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-  --radius: 16px;
-  --radius-sm: 10px;
+  --shadow: 0 18px 48px rgba(2, 6, 18, 0.55);
+  --radius: 18px;
+  --radius-sm: 11px;
   --transition: 0.2s ease;
+
+  --font-display: "Sora", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* ── Base ──────────────────────────────────────────────────── */
@@ -61,19 +67,27 @@ html { height: 100%; }
 
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
   background-color: var(--bg);
   background-image:
-    radial-gradient(ellipse 60% 50% at 15% 0%, rgba(99, 102, 241, 0.20), transparent 60%),
-    radial-gradient(ellipse 55% 45% at 100% 30%, rgba(139, 92, 246, 0.16), transparent 60%),
-    radial-gradient(ellipse 60% 60% at 50% 100%, rgba(59, 130, 246, 0.12), transparent 60%);
+    radial-gradient(ellipse 60% 50% at 12% -5%, rgba(99, 102, 241, 0.22), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 102% 25%, rgba(34, 211, 238, 0.15), transparent 60%),
+    radial-gradient(ellipse 70% 60% at 50% 110%, rgba(45, 212, 191, 0.10), transparent 60%);
   background-attachment: fixed;
   color: var(--fg);
   min-height: 100vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  letter-spacing: 0.1px;
   transition: background var(--transition), color var(--transition);
 }
+
+/* Display typography for headings & brand */
+h1, h2, h3, .logo-text, .mobile-logo, .brand-mark strong, .landing-hero-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
 
 /* Only the workspace/chat app uses a locked-scroll full-viewport layout */
 body.workspace-page {
@@ -4842,3 +4856,112 @@ body.landing-page--v27 {
   gap: 8px;
   margin-top: 8px;
 }
+
+/* ==========================================================
+   ZENITH OX v2.8 — UI refresh enhancements (additive)
+   ========================================================== */
+
+/* Brand orb — glowing indigo→teal gradient mark */
+.logo-mark,
+.new-chat-icon,
+.mobile-logo {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(99,102,241,0.45));
+}
+
+.logo-text {
+  background: linear-gradient(90deg, #eef1f8, #b9c2ff 60%, var(--teal));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+/* Landing brand orb */
+.brand-mark__orb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #a6b2ff, #6366f1 45%, #22d3ee 100%);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.14), 0 4px 18px rgba(34,211,238,0.4);
+  display: inline-block;
+}
+
+/* Buttons — refined gradient + glow */
+.btn-primary,
+.btn-primary--xl {
+  background: var(--accent-gradient);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: 0 8px 26px rgba(99,102,241,0.38);
+  transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+}
+.btn-primary:hover,
+.btn-primary--xl:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 12px 34px rgba(34,211,238,0.42);
+}
+
+.btn-ghost,
+.btn-ghost--xl {
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--fg);
+  border-radius: 999px;
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  transition: border var(--transition), background var(--transition);
+}
+.btn-ghost:hover,
+.btn-ghost--xl:hover {
+  border-color: var(--accent);
+  background: var(--glass-bg-strong);
+}
+
+/* Active nav link — gradient accent rail */
+.nav-link.active {
+  position: relative;
+  background: var(--accent-light);
+  color: var(--fg);
+}
+.nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 18%; bottom: 18%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent-gradient);
+}
+
+/* Landing hero title — gradient headline */
+.landing-hero-title {
+  background: linear-gradient(100deg, #ffffff 0%, #c7cdff 45%, var(--teal) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Inputs — focus ring with new accent */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+}
+
+/* Slim modern scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgba(124,140,255,0.35) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--accent), var(--teal));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Glass card surfaces get the deeper v2.8 shadow */
+.glass-bg, .card, .panel { box-shadow: var(--shadow); }
