@@ -191,6 +191,9 @@ def menu():
         projects=[],
         **ctx,
     )
+
+
+@main_bp.route("/modes/<mode_key>")
 def select_mode(mode_key: str):
     user, err = _require_auth_redirect()
     if err:
@@ -230,6 +233,101 @@ def open_chat(chat_id: str):
 # ---------------------------------------------------------------------------
 # v2.7 — Paywall / pricing page
 # ---------------------------------------------------------------------------
+
+
+
+@main_bp.route("/modes")
+def modes_page():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+
+    settings = db_get_or_create_user_settings(str(user["id"]))
+    current_mode_key = session.get("ai_mode") or settings.get("default_mode", "researcher")
+    ctx = _dashboard_context(user)
+    return render_template(
+        "modes.html",
+        modes=AI_MODES,
+        current_mode_key=current_mode_key,
+        **ctx,
+    )
+
+
+@main_bp.route("/research")
+def research_page():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+
+    ctx = _dashboard_context(user)
+    return render_template("research.html", **ctx)
+
+
+@main_bp.route("/presentations")
+def presentations_page():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+
+    ctx = _dashboard_context(user)
+    return render_template("presentations.html", **ctx)
+
+
+@main_bp.route("/vision")
+def vision_page():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+
+    ctx = _dashboard_context(user)
+    return render_template("vision.html", **ctx)
+
+
+@main_bp.route("/memory")
+def memory_page():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+
+    ctx = _dashboard_context(user)
+    return render_template("memory_page.html", **ctx)
+
+
+@main_bp.route("/help")
+def help_page():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+
+    ctx = _dashboard_context(user)
+    return render_template("help.html", **ctx)
+
+
+@main_bp.route("/admin")
+def admin_page():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+    if not bool(user.get("is_admin", False)):
+        flash("Admin access only.", "error")
+        return redirect(url_for("main.menu"))
+
+    ctx = _dashboard_context(user)
+    return render_template("admin.html", **ctx)
+
+
+@main_bp.route("/agents")
+def agents_page():
+    user, err = _require_auth_redirect()
+    if err:
+        return err
+
+    ctx = _dashboard_context(user)
+    return render_template(
+        "agents.html",
+        current_plan="premium" if _is_premium(user) else "free",
+        **ctx,
+    )
 
 @main_bp.route("/paywall")
 def paywall():

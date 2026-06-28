@@ -9,76 +9,65 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="dashboard-page">
-    <div class="dashboard-shell dashboard-shell--two-col">
-        <aside class="dashboard-sidebar">
-            <a href="{{ url_for('main.menu') }}" class="brand-mark">
-                <span class="brand-mark__orb"></span>
-                <span><strong>Zenith OX</strong><small>Neural workspace</small></span>
-            </a>
-            <nav class="dashboard-nav">
-                <a href="{{ url_for('main.menu') }}">Overview</a>
-                <a href="{{ url_for('main.profile') }}">Profile</a>
-                <a href="{{ url_for('main.settings') }}">Settings</a>
-                <a href="{{ url_for('main.files_page') }}">Files</a>
-                <a href="{{ url_for('main.history_center') }}" class="is-active">History</a>
-                <a href="{{ url_for('main.notifications_page') }}">Notifications{% if unread_notifications %} · {{ unread_notifications }}{% endif %}</a>
-            </nav>
-        </aside>
+<body class="ox-page">
 
-        <main class="management-main">
-            <section class="management-header">
-                <span class="eyebrow-pill">History center</span>
-                <h1>Search and manage previous chats</h1>
-                <p>Reopen, pin, or delete chat sessions from any mode without losing the upgraded workspace flow.</p>
-            </section>
+{% from "_ox_sidebar.html" import ox_sidebar %}
+{{ ox_sidebar(active='projects', user=user, username=username) }}
 
-            {% with messages=get_flashed_messages(with_categories=true) %}
-            {% for category,msg in messages %}
-            <div class="alert alert-{{ category }}">{{ msg }}</div>
-            {% endfor %}
-            {% endwith %}
+<main class="ox-page-main">
 
-            <section class="page-card">
-                <form method="GET" class="search-row">
-                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search by title or message content">
-                    <button type="submit" class="btn-primary">Search</button>
-                    {% if search_query %}<a href="{{ url_for('main.history_center') }}" class="btn-secondary">Reset</a>{% endif %}
-                </form>
-            </section>
+    {% with messages=get_flashed_messages(with_categories=true) %}
+    {% for category,msg in messages %}
+    <div class="ox-alert ox-alert--{{ category }}" style="margin-bottom:20px;">{{ msg }}</div>
+    {% endfor %}
+    {% endwith %}
 
-            <section class="page-card">
-                <h3>{{ chats|length }} chat{{ '' if chats|length == 1 else 's' }}</h3>
-                {% if chats %}
-                <div class="item-list">
-                    {% for chat in chats %}
-                    <div class="item-row">
-                        <div>
-                            <strong>{% if chat.pinned %}📌 {% endif %}{{ chat.title }}</strong>
-                            <span>{{ chat.mode|replace('_', ' ')|title }} · {{ chat.message_count or 0 }} messages · {{ chat.updated_at.strftime('%Y-%m-%d %H:%M') if chat.updated_at else '' }}</span>
-                        </div>
-                        <div class="item-row__actions item-row__actions--stack">
-                            <form method="POST">
-                                <input type="hidden" name="chat_id" value="{{ chat.id }}">
-                                <button type="submit" name="action" value="open" class="btn-primary">Open</button>
-                            </form>
-                            <form method="POST">
-                                <input type="hidden" name="chat_id" value="{{ chat.id }}">
-                                <button type="submit" name="action" value="pin" class="btn-secondary">{% if chat.pinned %}Unpin{% else %}Pin{% endif %}</button>
-                            </form>
-                            <form method="POST" onsubmit="return confirm('Delete this chat permanently?');">
-                                <input type="hidden" name="chat_id" value="{{ chat.id }}">
-                                <button type="submit" name="action" value="delete" class="btn-secondary btn-secondary--danger">Delete</button>
-                            </form>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p>No chat sessions matched your search.</p>
-                {% endif %}
-            </section>
-        </main>
+    <h1>History Center</h1>
+    <p class="ox-page-sub">Reopen, pin, or delete chat sessions from any mode without losing your workspace flow.</p>
+
+    <div class="ox-card">
+        <form method="GET" class="ox-search-row" style="margin-bottom:0;">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search by title or message content">
+            <button type="submit" class="ox-btn-sm ox-btn-sm--primary" style="padding:12px 20px;font-size:14px;">Search</button>
+            {% if search_query %}<a href="{{ url_for('main.history_center') }}" class="ox-btn-sm">Reset</a>{% endif %}
+        </form>
     </div>
+
+    <div class="ox-card">
+        <h3>{{ chats|length }} chat{{ '' if chats|length == 1 else 's' }}</h3>
+        {% if chats %}
+        <div class="ox-item-list">
+            {% for chat in chats %}
+            <div class="ox-item-row">
+                <div>
+                    <div class="ox-item-row__title">{% if chat.pinned %}📌 {% endif %}{{ chat.title }}</div>
+                    <div class="ox-item-row__meta">{{ chat.mode|replace('_', ' ')|title }} · {{ chat.message_count or 0 }} messages · {{ chat.updated_at.strftime('%Y-%m-%d %H:%M') if chat.updated_at else '' }}</div>
+                </div>
+                <div class="ox-item-row__actions">
+                    <form method="POST">
+                        <input type="hidden" name="chat_id" value="{{ chat.id }}">
+                        <button type="submit" name="action" value="open" class="ox-btn-sm ox-btn-sm--primary">Open</button>
+                    </form>
+                    <form method="POST">
+                        <input type="hidden" name="chat_id" value="{{ chat.id }}">
+                        <button type="submit" name="action" value="pin" class="ox-btn-sm">{% if chat.pinned %}Unpin{% else %}Pin{% endif %}</button>
+                    </form>
+                    <form method="POST" onsubmit="return confirm('Delete this chat permanently?');">
+                        <input type="hidden" name="chat_id" value="{{ chat.id }}">
+                        <button type="submit" name="action" value="delete" class="ox-btn-sm ox-btn-sm--danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="ox-empty">
+            <p>No chat sessions matched your search.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</main>
+
 </body>
 </html>

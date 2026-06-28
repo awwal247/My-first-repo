@@ -132,3 +132,41 @@ CREATE TABLE IF NOT EXISTS project_chats (
 
 -- Max 3 chats per project is enforced in Python, not the DB.
 -- ============================================================
+
+
+-- ============================================================
+-- Shared developer / QA test account
+-- ============================================================
+-- This is NOT a real user. It is a fixed-credential account shared among
+-- the development team so the app can always be logged into and tested,
+-- independent of whatever real users exist.
+--
+-- Its UUID is fixed (not gen_random_uuid()) so it matches the SAME
+-- account that the app falls back to locally (SQLite) on the rare
+-- occasion Supabase itself is unreachable -- see
+-- app/services/fallback_db.py for that fallback logic. Whether Supabase
+-- is up or down, logging in with these credentials always works:
+--
+--   email:    dev@zenithox.local
+--   password: PIPuTZdEZyGlxw
+--
+-- Share these credentials only with other developers on the team --
+-- never give them to end users. Safe to re-run (ON CONFLICT DO NOTHING).
+INSERT INTO users (id, email, display_name, password_hash, google_id, bio, avatar_color, is_premium, is_admin)
+VALUES (
+    'ecb548c8-436b-5ef0-9250-2aa36942bcb3',
+    'dev@zenithox.local',
+    'Zenith Dev',
+    'scrypt:32768:8:1$Iial1TFIQFH2mME8$24b140acef4d4afa3d2201ac6dc6b2f97729779f04aae3cd305750f70e1757b2d2e9c920a90efd372ffe2babf0453033a86c4e93536147450c6f80680aa6c632',
+    NULL,
+    'Shared developer/QA account. Works even when Supabase is down.',
+    '#c9a84c',
+    true,
+    false
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO user_settings (user_id)
+VALUES ('ecb548c8-436b-5ef0-9250-2aa36942bcb3')
+ON CONFLICT (user_id) DO NOTHING;
+-- ============================================================

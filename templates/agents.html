@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}AI Agents — Zenith OX{% endblock %}
+
+{% block content %}
+<div class="ox-page-main" style="padding:0;">
+  <div class="ox-agents-page-shell">
+    <div class="ox-agents-toprow">
+      <div>
+        <h1 class="ox-agents-page-title">AI Agents</h1>
+        <p class="ox-agents-page-sub">Specialized assistants for research, writing, coding, analysis, and production workflows.</p>
+      </div>
+      <a href="{{ url_for('main.index') }}" class="ox-create-agent-btn">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        New Chat
+      </a>
+    </div>
+
+    <div class="ox-agents-filters">
+      <button class="ox-filter-tab is-active" onclick="filterAgents('all', this)">All</button>
+      <button class="ox-filter-tab" onclick="filterAgents('research', this)">Research</button>
+      <button class="ox-filter-tab" onclick="filterAgents('content', this)">Content</button>
+      <button class="ox-filter-tab" onclick="filterAgents('coding', this)">Coding</button>
+      <button class="ox-filter-tab" onclick="filterAgents('analysis', this)">Analysis</button>
+      <button class="ox-filter-tab" onclick="filterAgents('design', this)">Design</button>
+      <button class="ox-filter-tab" onclick="filterAgents('language', this)">Language</button>
+      <button class="ox-filter-tab" onclick="filterAgents('custom', this)">Custom</button>
+    </div>
+
+    <div class="ox-agents-grid" id="agentsGrid">
+      <div class="ox-agent-card" data-category="research">
+        <div class="ox-agent-card__icon">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <div class="ox-agent-card__name">Researcher</div>
+        <div class="ox-agent-card__desc">Finds, verifies, and synthesizes information from credible sources.</div>
+        <a href="{{ url_for('main.select_mode', mode_key='researcher') }}" class="ox-agent-run-btn">Run</a>
+      </div>
+
+      <div class="ox-agent-card" data-category="content">
+        <div class="ox-agent-card__icon">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        </div>
+        <div class="ox-agent-card__name">Writer</div>
+        <div class="ox-agent-card__desc">Creates strong drafts for stories, posts, and polished written content.</div>
+        <a href="{{ url_for('main.select_mode', mode_key='story_writer') }}" class="ox-agent-run-btn">Run</a>
+      </div>
+
+      <div class="ox-agent-card" data-category="coding">
+        <div class="ox-agent-card__icon">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        </div>
+        <div class="ox-agent-card__name">Coder</div>
+        <div class="ox-agent-card__desc">Writes cleaner code, debugs issues, and helps ship features faster.</div>
+        <a href="{{ url_for('main.select_mode', mode_key='developer') }}" class="ox-agent-run-btn">Run</a>
+      </div>
+
+      <div class="ox-agent-card" data-category="analysis">
+        <div class="ox-agent-card__icon">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div class="ox-agent-card__name">Analyst</div>
+        <div class="ox-agent-card__desc">Breaks down numbers, logic, and structured problem-solving tasks.</div>
+        <a href="{{ url_for('main.select_mode', mode_key='solve_it') }}" class="ox-agent-run-btn">Run</a>
+      </div>
+
+      <div class="ox-agent-card" data-category="design">
+        <div class="ox-agent-card__icon">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+        </div>
+        <div class="ox-agent-card__name">Slides Generator</div>
+        <div class="ox-agent-card__desc">Builds presentation-ready content and slide outlines for fast deck creation.</div>
+        <a href="{{ url_for('main.select_mode', mode_key='pptx_generator') }}" class="ox-agent-run-btn">Run</a>
+      </div>
+
+      <div class="ox-agent-card" data-category="language">
+        <div class="ox-agent-card__icon">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+        </div>
+        <div class="ox-agent-card__name">Translator</div>
+        <div class="ox-agent-card__desc">Great for multilingual prompts, rewriting, and adapting tone across languages.</div>
+        <a href="{{ url_for('main.select_mode', mode_key='researcher') }}" class="ox-agent-run-btn">Run</a>
+      </div>
+
+      <div class="ox-agent-card" data-category="content">
+        <div class="ox-agent-card__icon">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        </div>
+        <div class="ox-agent-card__name">Email Writer</div>
+        <div class="ox-agent-card__desc">Drafts professional emails with the right structure and tone.</div>
+        <a href="{{ url_for('main.select_mode', mode_key='email_writer') }}" class="ox-agent-run-btn">Run</a>
+      </div>
+
+      <div class="ox-agent-card ox-agent-card--builder" data-category="custom" onclick="alert('Custom agent builder coming soon.')">
+        <div class="ox-agent-card__icon">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        </div>
+        <div class="ox-agent-card__name">Build Custom Agent</div>
+        <div class="ox-agent-card__desc">Placeholder for a future builder with saved prompts, tools, and reusable workflows.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function filterAgents(category, btn) {
+  document.querySelectorAll('.ox-filter-tab').forEach(tab => tab.classList.remove('is-active'));
+  btn.classList.add('is-active');
+  document.querySelectorAll('.ox-agent-card').forEach(card => {
+    card.style.display = (category === 'all' || card.dataset.category === category) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

@@ -3,82 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX — Notifications</title>
+    <title>ZENITH OX — Notifications</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="dashboard-page">
-    <div class="dashboard-shell dashboard-shell--two-col">
-        <aside class="dashboard-sidebar">
-            <a href="{{ url_for('main.menu') }}" class="brand-mark">
-                <span class="brand-mark__orb"></span>
-                <span><strong>Zenith OX</strong><small>Neural workspace</small></span>
+<body class="ox-notifications">
+
+    <div class="ox-notif-shell">
+
+        <!-- Top bar: Back | Logo | Mark all read -->
+        <div class="ox-notif-topbar">
+            <a href="{{ url_for('main.menu') }}" class="ox-back-link">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Back
             </a>
-            <nav class="dashboard-nav">
-                <a href="{{ url_for('main.menu') }}">Overview</a>
-                <a href="{{ url_for('main.profile') }}">Profile</a>
-                <a href="{{ url_for('main.settings') }}">Settings</a>
-                <a href="{{ url_for('main.files_page') }}">Files</a>
-                <a href="{{ url_for('main.history_center') }}">History</a>
-                <a href="{{ url_for('main.notifications_page') }}" class="is-active">Notifications{% if unread_notifications %} · {{ unread_notifications }}{% endif %}</a>
-            </nav>
-        </aside>
 
-        <main class="management-main">
-            <section class="management-header">
-                <span class="eyebrow-pill">Notification center</span>
-                <h1>Workspace events and account activity</h1>
-                <p>Review uploads, profile changes, settings updates, and other system events from your connected backend.</p>
-            </section>
+            <!-- Bull logo -->
+            <span class="ox-notif-logo">
+                <img src="{{ url_for('static', filename='images/logo-orb.png') }}"
+                     alt="Zenith OX"
+                     style="width:36px;height:36px;object-fit:contain;"
+                     onerror="this.style.display='none'">
+            </span>
 
-            {% with messages=get_flashed_messages(with_categories=true) %}
-            {% for category,msg in messages %}
-            <div class="alert alert-{{ category }}">{{ msg }}</div>
-            {% endfor %}
-            {% endwith %}
+            <!-- Mark all read -->
+            <form method="POST" style="margin:0;">
+                <button type="submit" name="action" value="read_all" class="ox-mark-all-btn">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Mark all read
+                </button>
+            </form>
+        </div>
 
-            <section class="page-card">
-                <div class="section-actions">
-                    <h3>{{ notifications|length }} notification{{ '' if notifications|length == 1 else 's' }}</h3>
-                    <form method="POST">
-                        <button type="submit" name="action" value="read_all" class="btn-secondary">Mark all as read</button>
-                    </form>
+        <!-- Flash messages -->
+        {% with messages=get_flashed_messages(with_categories=true) %}
+        {% for category, msg in messages %}
+        <div class="ox-alert ox-alert--{{ category }}" style="margin-bottom:16px;">{{ msg }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        <!-- Heading -->
+        <div class="ox-notif-eyebrow">INBOX</div>
+        <div class="ox-notif-heading">
+            <h1>Notifications</h1>
+            {% if unread_notifications and unread_notifications > 0 %}
+            <span class="ox-notif-new-badge">{{ unread_notifications }} new</span>
+            {% endif %}
+        </div>
+        <div class="ox-notif-sub">Tap any notification to preview the summary.</div>
+
+        <!-- Notification list -->
+        {% if notifications %}
+        <div class="ox-notif-list">
+            {% for notification in notifications %}
+            <div class="ox-notif-item {% if not notification.is_read %}is-unread{% endif %}">
+
+                <!-- Icon -->
+                <div class="ox-notif-icon">
+                    {% if notification.category == 'agent' or notification.category == 'system' %}
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    {% elif notification.category == 'document' or notification.category == 'file' %}
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    {% elif notification.category == 'chat' or notification.category == 'message' %}
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    {% else %}
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    {% endif %}
                 </div>
 
-                {% if notifications %}
-                <div class="item-list">
-                    {% for notification in notifications %}
-                    <div class="item-row {% if not notification.is_read %}item-row--unread{% endif %}">
-                        <div>
-                            <strong>{{ notification.title }}</strong>
-                            <span>{{ notification.category|title }} · {{ notification.created_at.strftime('%Y-%m-%d %H:%M') if notification.created_at else '' }}</span>
-                            <p>{{ notification.body }}</p>
-                            {% if notification.action_url %}
-                            <a href="{{ notification.action_url }}" class="inline-link">Open related page</a>
-                            {% endif %}
-                        </div>
-                        <div class="item-row__actions item-row__actions--stack">
+                <!-- Body -->
+                <div class="ox-notif-body">
+                    <div class="ox-notif-row">
+                        <span class="ox-notif-title">{{ notification.title }}</span>
+                        <div class="ox-notif-meta">
+                            <span class="ox-notif-time">
+                                {{ notification.created_at.strftime('%b %d') if notification.created_at else '' }}
+                            </span>
                             {% if not notification.is_read %}
-                            <form method="POST">
-                                <input type="hidden" name="notification_id" value="{{ notification.id }}">
-                                <button type="submit" name="action" value="read" class="btn-secondary">Mark read</button>
-                            </form>
+                            <span class="ox-notif-dot"></span>
                             {% endif %}
-                            <form method="POST" onsubmit="return confirm('Delete this notification?');">
-                                <input type="hidden" name="notification_id" value="{{ notification.id }}">
-                                <button type="submit" name="action" value="delete" class="btn-secondary btn-secondary--danger">Delete</button>
-                            </form>
                         </div>
                     </div>
-                    {% endfor %}
+                    <div class="ox-notif-text">{{ notification.body }}</div>
+
+                    <!-- Actions row -->
+                    <div style="display:flex;gap:8px;margin-top:10px;">
+                        {% if not notification.is_read %}
+                        <form method="POST" style="margin:0;">
+                            <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                            <button type="submit" name="action" value="read"
+                                    style="background:none;border:none;color:var(--gold);font-size:12px;cursor:pointer;padding:0;">
+                                Mark read
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if notification.action_url %}
+                        <a href="{{ notification.action_url }}"
+                           style="color:var(--ox-muted);font-size:12px;text-decoration:none;">
+                            Open →
+                        </a>
+                        {% endif %}
+                        <form method="POST" style="margin:0;margin-left:auto;">
+                            <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                            <button type="submit" name="action" value="delete"
+                                    onclick="return confirm('Delete this notification?')"
+                                    style="background:none;border:none;color:var(--ox-muted);font-size:12px;cursor:pointer;padding:0;">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                {% else %}
-                <p>No notifications yet. Actions across the workspace will appear here.</p>
-                {% endif %}
-            </section>
-        </main>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:60px 20px;color:var(--ox-muted);">
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 12px;display:block;opacity:0.4;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <p style="font-size:14px;">No notifications yet. Actions across the workspace will appear here.</p>
+        </div>
+        {% endif %}
+
     </div>
+
 </body>
 </html>

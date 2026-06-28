@@ -38,14 +38,33 @@ auth_bp = Blueprint("auth", __name__)
 def _send_login_notification(user_id: str) -> None:
     """
     Fire a login-security notification immediately after a successful sign-in.
-    Delegates to python_additions.login_notify so all detection logic lives there.
+    Uses the native PostgreSQL notification helper so it works without a
+    separate Supabase client dependency.
     Fails silently — a notification error must never break the login flow.
     """
     try:
-        from python_additions.login_notify import send_login_notification
-        from app.services.db import get_supabase_client  # adjust if your project exposes supabase differently
-        sb = get_supabase_client()
-        send_login_notification(sb, user_id=user_id)
+        from datetime import datetime, timezone
+
+        from app.services.db import db_create_notification
+        from python_additions.login_notify import (
+            get_browser_info,
+            get_client_ip,
+            get_location_from_ip,
+        )
+
+        now = datetime.now(timezone.utc)
+        ip = get_client_ip()
+        browser = get_browser_info()
+        location = get_location_from_ip(ip)
+        time_str = now.strftime("%B %d, %Y at %I:%M %p UTC")
+
+        db_create_notification(
+            user_id,
+            "New Sign-In Detected",
+            f"Sign-in on {time_str}. Browser: {browser}. IP: {ip}. Location: {location}.",
+            "info",
+            "/notifications",
+        )
     except Exception as exc:
         current_app.logger.warning("[auth] Login notification failed: %s", exc)
 

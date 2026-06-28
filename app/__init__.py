@@ -64,15 +64,4 @@ def create_app(config: Config | None = None) -> Flask:
 
     app.extensions["google_oauth"] = google
 
-    # v2.7 — Auto-create the default Zenith test user on every startup.
-    # Safe to leave permanently: the function checks if the user already
-    # exists and does nothing if found.
-    try:
-        from app.services.db import get_supabase_client
-        from python_additions.create_test_user import create_default_test_user
-        supabase = get_supabase_client()
-        create_default_test_user(supabase=supabase)
-    except Exception as exc:
-        print(f"[zenith] test user bootstrap skipped: {exc}")
-
     return app

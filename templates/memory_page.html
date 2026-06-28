@@ -1,26 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Memory — Zenith OX{% endblock %}
 {% block content %}
-<div class="page-content p-6">
-  <div class="page-header mb-6">
-    <h1 class="page-title">🧠 Memory</h1>
-    <p class="page-sub">Your persistent vector memory across all AI modes.</p>
-  </div>
+<div class="ox-page-main" style="padding:0;">
+  <h1>🧠 Memory</h1>
+  <p class="ox-page-sub">Your persistent vector memory across all AI modes.</p>
+
   <div id="memoryContent">
-    <p class="muted-text">Loading memory…</p>
+    <p style="color:var(--ox-muted);font-size:14px;">Loading memory…</p>
   </div>
 </div>
 <script>
 fetch('/memory-sidebar').then(r => r.json()).then(data => {
   var box = document.getElementById('memoryContent');
-  if (!data || !Object.keys(data).length) { box.innerHTML = '<p class="muted-text">No memory yet. Start chatting!</p>'; return; }
+  if (!data || !Object.keys(data).length) {
+    box.innerHTML = '<div class="ox-empty"><p>No memory yet. <a href="{{ url_for("main.index") }}">Start chatting →</a></p></div>';
+    return;
+  }
   box.innerHTML = Object.entries(data).map(function(e) {
     var mode = e[0], items = e[1];
-    return '<div class="glass-card mb-4"><h3 class="section-title mb-3">' + mode + '</h3>' +
+    return '<div class="ox-memory-mode"><h3>' + mode + '</h3>' +
       (items.length ? items.map(function(m) {
-        return '<div class="memory-item"><span class="memory-role">' + m.role + '</span><span class="memory-text">' + m.content + '</span></div>';
-      }).join('') : '<p class="muted-text">Empty</p>') + '</div>';
+        return '<div class="ox-memory-item"><span class="ox-memory-item__role">' + m.role + '</span><span class="ox-memory-item__text">' + m.content + '</span></div>';
+      }).join('') : '<p style="color:var(--ox-muted);font-size:13px;">Empty</p>') + '</div>';
   }).join('');
-}).catch(function() { document.getElementById('memoryContent').innerHTML = '<p class="muted-text">Could not load memory.</p>'; });
+}).catch(function() {
+  document.getElementById('memoryContent').innerHTML = '<div class="ox-empty"><p>Could not load memory.</p></div>';
+});
 </script>
 {% endblock %}

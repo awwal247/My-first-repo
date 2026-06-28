@@ -1,24 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Admin — Zenith OX{% endblock %}
 {% block content %}
-<div class="page-content p-6">
-  <div class="page-header mb-6">
-    <h1 class="page-title">🛡 Admin Overview</h1>
-    <p class="page-sub">Platform activity and usage metrics.</p>
+<div class="ox-page-main" style="padding:0;">
+  <h1>🛡 Admin Overview</h1>
+  <p class="ox-page-sub">Platform activity and usage metrics.</p>
+
+  <div class="ox-kpi-grid">
+    <div class="ox-kpi-card"><div class="ox-kpi-label">Total Users</div><div class="ox-kpi-value" id="kpiUsers">—</div></div>
+    <div class="ox-kpi-card"><div class="ox-kpi-label">Chats</div><div class="ox-kpi-value" id="kpiChats">—</div></div>
+    <div class="ox-kpi-card"><div class="ox-kpi-label">AI Provider</div><div class="ox-kpi-value">OpenRouter</div></div>
+    <div class="ox-kpi-card"><div class="ox-kpi-label">Search</div><div class="ox-kpi-value">Exa AI</div></div>
   </div>
-  <div class="kpi-grid mb-6">
-    <div class="glass-card kpi-card"><div class="kpi-label">Total Users</div><div class="kpi-value" id="kpiUsers">—</div></div>
-    <div class="glass-card kpi-card"><div class="kpi-label">Chats</div><div class="kpi-value" id="kpiChats">—</div></div>
-    <div class="glass-card kpi-card"><div class="kpi-label">AI Provider</div><div class="kpi-value">OpenRouter</div></div>
-    <div class="glass-card kpi-card"><div class="kpi-label">Search</div><div class="kpi-value">Exa AI</div></div>
-  </div>
-  <div class="glass-card">
-    <h3 class="settings-group-title">System Status</h3>
-    <div class="setting-row"><div class="setting-name">OpenRouter</div><span class="badge badge-green">Primary</span></div>
-    <div class="setting-row"><div class="setting-name">Groq (fallback)</div><span class="badge">Standby</span></div>
-    <div class="setting-row"><div class="setting-name">Exa AI (search)</div><span class="badge badge-green">Primary</span></div>
-    <div class="setting-row"><div class="setting-name">Tavily (search fallback)</div><span class="badge">Standby</span></div>
-    <div class="setting-row"><div class="setting-name">Supabase DB</div><span class="badge badge-green">Connected</span></div>
+
+  <div class="ox-card">
+    <h3>System Status</h3>
+    <div class="ox-status-row"><div>OpenRouter</div><span class="ox-badge ox-badge--green">Primary</span></div>
+    <div class="ox-status-row"><div>Groq (fallback)</div><span class="ox-badge ox-badge--muted">Standby</span></div>
+    <div class="ox-status-row"><div>Exa AI (search)</div><span class="ox-badge ox-badge--green">Primary</span></div>
+    <div class="ox-status-row"><div>Tavily (search fallback)</div><span class="ox-badge ox-badge--muted">Standby</span></div>
+    <div class="ox-status-row"><div>Supabase DB</div><span class="ox-badge ox-badge--green">Connected</span></div>
   </div>
 </div>
 <script>

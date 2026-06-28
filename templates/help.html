@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Help — Zenith OX{% endblock %}
 {% block content %}
-<div class="page-content p-6">
-  <div class="page-header mb-6"><h1 class="page-title">❓ Help</h1></div>
-  <div class="help-grid">
+<div class="ox-page-main" style="padding:0;">
+  <h1>❓ Help</h1>
+  <p class="ox-page-sub">Frequently asked questions about Zenith OX.</p>
+
+  <div class="ox-help-grid">
     {% set faqs = [
       ('What is Zenith OX?', 'Zenith OX is a secure multi-mode AI assistant powered by OpenRouter (primary) and Groq (fallback). It includes specialist modes for coding, research, writing, math, email, and presentations.'),
       ('What is the AI text tracker?', 'Responses stream live, token-by-token, via Server-Sent Events (SSE) — no fake typewriter animation. The model thinks fully before replying, then delivers concise answers.'),
@@ -13,9 +15,9 @@
       ('How do I generate presentations?', 'Switch to AI Slides Generator mode, describe your presentation, and the agentic pipeline will produce a downloadable .pptx with AI images on every slide.'),
     ] %}
     {% for q, a in faqs %}
-    <div class="glass-card help-item">
-      <h3 class="help-q">{{ q }}</h3>
-      <p class="help-a">{{ a }}</p>
+    <div class="ox-faq-item">
+      <h3>{{ q }}</h3>
+      <p>{{ a }}</p>
     </div>
     {% endfor %}
   </div>

@@ -9,34 +9,198 @@ v5.0 UI/backend refresh additions:
   - Profile and workspace settings persistence
   - Notification center persistence
   - User file vault persistence (BYTEA-backed)
+
+Developer fallback (added):
+  - If Supabase/Postgres is unreachable, calls that concern the shared
+    developer/QA account (see app/services/fallback_db.py) are
+    transparently retried against a local SQLite mirror instead of
+    raising. Regular user accounts are unaffected and still see the
+    real RuntimeError if the database is down. See fallback_db.py for
+    the dev account's credentials and rationale.
 """
 
 from __future__ import annotations
 
+import functools
 import json
 import os
 import threading
 import uuid
 from typing import Any
+from urllib.parse import urlsplit
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+from app.services import fallback_db as _fb
 
 _SCHEMA_READY = False
 _SCHEMA_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
+# Developer-account fallback plumbing
+# ---------------------------------------------------------------------------
+#
+# Maps each Postgres-backed db_* function name to its SQLite fallback_db.py
+# equivalent (fb_*). Used by _with_dev_fallback() below.
+_FALLBACK_MAP = {
+    "db_find_user_by_email": _fb.fb_find_user_by_email,
+    "db_find_user_by_id": _fb.fb_find_user_by_id,
+    "db_update_user_profile": _fb.fb_update_user_profile,
+    "db_update_user_password": _fb.fb_update_user_password,
+    "db_save_message": _fb.fb_save_message,
+    "db_get_conversation": _fb.fb_get_conversation,
+    "db_clear_conversation": _fb.fb_clear_conversation,
+    "db_get_all_modes_memory": _fb.fb_get_all_modes_memory,
+    "db_create_chat": _fb.fb_create_chat,
+    "db_get_chat": _fb.fb_get_chat,
+    "db_get_user_chats": _fb.fb_get_user_chats,
+    "db_update_chat": _fb.fb_update_chat,
+    "db_delete_chat": _fb.fb_delete_chat,
+    "db_toggle_pin": _fb.fb_toggle_pin,
+    "db_rename_chat": _fb.fb_rename_chat,
+    "db_search_chats": _fb.fb_search_chats,
+    "db_restore_chat": _fb.fb_restore_chat,
+    "db_get_or_create_user_settings": _fb.fb_get_or_create_user_settings,
+    "db_update_user_settings": _fb.fb_update_user_settings,
+    "db_get_dashboard_summary": _fb.fb_get_dashboard_summary,
+    "db_create_notification": _fb.fb_create_notification,
+    "db_get_user_notifications": _fb.fb_get_user_notifications,
+    "db_mark_notification_read": _fb.fb_mark_notification_read,
+    "db_mark_all_notifications_read": _fb.fb_mark_all_notifications_read,
+    "db_delete_notification": _fb.fb_delete_notification,
+    "db_save_user_file": _fb.fb_save_user_file,
+    "db_get_user_files": _fb.fb_get_user_files,
+    "db_get_user_file": _fb.fb_get_user_file,
+    "db_delete_user_file": _fb.fb_delete_user_file,
+}
+
+# Functions whose first positional/keyword arg is a user_id (used to decide
+# whether a failing call concerns the dev account).
+_USER_ID_FIRST_ARG = {
+    "db_find_user_by_id",
+    "db_update_user_profile",
+    "db_update_user_password",
+    "db_save_message",
+    "db_get_conversation",
+    "db_clear_conversation",
+    "db_get_all_modes_memory",
+    "db_create_chat",
+    "db_get_user_chats",
+    "db_search_chats",
+    "db_get_or_create_user_settings",
+    "db_update_user_settings",
+    "db_get_dashboard_summary",
+    "db_create_notification",
+    "db_get_user_notifications",
+    "db_mark_notification_read",
+    "db_mark_all_notifications_read",
+    "db_delete_notification",
+    "db_save_user_file",
+    "db_get_user_files",
+    "db_get_user_file",
+    "db_delete_user_file",
+}
+
+# Functions keyed by chat_id rather than user_id -- we can't tell which
+# user a chat belongs to without a lookup, so we ask the SQLite fallback
+# directly whether it already knows this chat_id (i.e. it was created
+# under the dev account).
+_CHAT_KEYED_FUNCS = {"db_get_chat", "db_update_chat", "db_delete_chat", "db_toggle_pin", "db_rename_chat", "db_restore_chat"}
+
+
+def _looks_like_dev_call(func_name: str, args: tuple, kwargs: dict) -> bool:
+    """Best-effort check: does this call concern the shared dev account?"""
+    if func_name == "db_find_user_by_email":
+        email = (args[0] if args else kwargs.get("email")) or ""
+        return _fb.is_dev_account(email=email)
+
+    if func_name in _CHAT_KEYED_FUNCS:
+        chat_id = (args[0] if args else kwargs.get("chat_id")) or ""
+        try:
+            return _fb.fb_get_chat(chat_id) is not None
+        except Exception:
+            return False
+
+    if func_name in _USER_ID_FIRST_ARG:
+        user_id = (args[0] if args else kwargs.get("user_id")) or ""
+        return _fb.is_dev_account(user_id=user_id)
+
+    return False
+
+
+def _with_dev_fallback(func):
+    """
+    Decorator: on RuntimeError from the wrapped Postgres function, retry
+    against the SQLite fallback IF the call concerns the dev account.
+    Otherwise (or if it's not a dev-account call), re-raise the original
+    error so real users still see accurate failures.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except RuntimeError as exc:
+            name = func.__name__
+            fallback_fn = _FALLBACK_MAP.get(name)
+            if fallback_fn and _looks_like_dev_call(name, args, kwargs):
+                return fallback_fn(*args, **kwargs)
+            raise exc
+
+    return wrapper
+
+
+# ---------------------------------------------------------------------------
 # Connection helpers
 # ---------------------------------------------------------------------------
+
+def _validate_database_url(db_url: str) -> None:
+    """Fail fast on missing or placeholder Supabase connection strings."""
+    if not db_url:
+        raise RuntimeError("DATABASE_URL is not set")
+
+    parsed = urlsplit(db_url)
+    if parsed.scheme not in {"postgres", "postgresql"}:
+        raise RuntimeError("DATABASE_URL must start with postgres:// or postgresql://")
+
+    hostname = (parsed.hostname or "").strip()
+    username = (parsed.username or "").strip()
+    password = parsed.password
+
+    if not hostname:
+        raise RuntimeError("DATABASE_URL is missing a hostname")
+
+    placeholder_detected = any(
+        marker in db_url
+        for marker in (
+            "aws-0-.pooler.supabase.com",
+            "db..supabase.co",
+            "<project-ref>",
+            "your-project-ref",
+        )
+    ) or username == "postgres." or ".." in hostname
+
+    if placeholder_detected:
+        raise RuntimeError(
+            "DATABASE_URL still contains the example Supabase host/user placeholders. "
+            "Copy the real Supabase connection string from Project Settings -> Database -> Connection string, "
+            "use the Transaction pooler URI on port 6543 for Vercel, and URL-encode the password if it contains special characters."
+        )
+
+    if password in (None, ""):
+        raise RuntimeError(
+            "DATABASE_URL is missing the database password. Copy the full connection string from Supabase instead of editing the example by hand."
+        )
+
 
 def get_connection():
     """Create a fresh PostgreSQL connection from DATABASE_URL."""
     db_url = os.getenv("DATABASE_URL", "")
-    if not db_url:
-        raise RuntimeError("DATABASE_URL is not set")
+    _validate_database_url(db_url)
     try:
-        return psycopg2.connect(db_url)
+        return psycopg2.connect(db_url, connect_timeout=10, sslmode="require")
     except Exception as exc:
         raise RuntimeError(f"Database connection failed: {exc}") from exc
 
@@ -182,6 +346,7 @@ def db_create_user(email: str, display_name: str, password_hash: str | None, goo
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_find_user_by_email(email: str) -> dict | None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -210,6 +375,7 @@ def db_find_user_by_google_id(google_id: str) -> dict | None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_find_user_by_id(user_id: str) -> dict | None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -241,6 +407,7 @@ def db_link_google_id(user_id: str, google_id: str) -> None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_update_user_profile(user_id: str, display_name: str, bio: str, avatar_color: str) -> dict:
     ensure_runtime_schema()
     conn = get_connection()
@@ -267,6 +434,7 @@ def db_update_user_profile(user_id: str, display_name: str, bio: str, avatar_col
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_update_user_password(user_id: str, password_hash: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -288,6 +456,7 @@ def db_update_user_password(user_id: str, password_hash: str) -> None:
 # Conversation operations (per-message memory)
 # ---------------------------------------------------------------------------
 
+@_with_dev_fallback
 def db_save_message(user_id: str, mode_key: str, role: str, content: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -308,6 +477,7 @@ def db_save_message(user_id: str, mode_key: str, role: str, content: str) -> Non
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_get_conversation(user_id: str, mode_key: str, limit: int = 60) -> list[dict]:
     ensure_runtime_schema()
     conn = get_connection()
@@ -330,6 +500,7 @@ def db_get_conversation(user_id: str, mode_key: str, limit: int = 60) -> list[di
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_clear_conversation(user_id: str, mode_key: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -347,6 +518,7 @@ def db_clear_conversation(user_id: str, mode_key: str) -> None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_get_all_modes_memory(user_id: str) -> dict[str, list[dict]]:
     """Return all conversations grouped by mode_key."""
     ensure_runtime_schema()
@@ -378,6 +550,7 @@ def db_get_all_modes_memory(user_id: str) -> dict[str, list[dict]]:
 # Chat session operations
 # ---------------------------------------------------------------------------
 
+@_with_dev_fallback
 def db_create_chat(user_id: str, title: str, mode: str, messages: list) -> str:
     ensure_runtime_schema()
     conn = get_connection()
@@ -400,6 +573,7 @@ def db_create_chat(user_id: str, title: str, mode: str, messages: list) -> str:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_get_chat(chat_id: str) -> dict | None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -414,6 +588,7 @@ def db_get_chat(chat_id: str) -> dict | None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_get_user_chats(user_id: str, limit: int | None = None) -> list[dict]:
     ensure_runtime_schema()
     conn = get_connection()
@@ -440,6 +615,7 @@ def db_get_user_chats(user_id: str, limit: int | None = None) -> list[dict]:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_update_chat(chat_id: str, title: str | None = None, messages: list | None = None, mode: str | None = None) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -469,6 +645,7 @@ def db_update_chat(chat_id: str, title: str | None = None, messages: list | None
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_delete_chat(chat_id: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -483,6 +660,7 @@ def db_delete_chat(chat_id: str) -> None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_toggle_pin(chat_id: str) -> bool:
     ensure_runtime_schema()
     conn = get_connection()
@@ -502,6 +680,7 @@ def db_toggle_pin(chat_id: str) -> bool:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_rename_chat(chat_id: str, new_title: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -519,6 +698,7 @@ def db_rename_chat(chat_id: str, new_title: str) -> None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_search_chats(user_id: str, query: str) -> list[dict]:
     ensure_runtime_schema()
     conn = get_connection()
@@ -543,6 +723,7 @@ def db_search_chats(user_id: str, query: str) -> list[dict]:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_restore_chat(chat_id: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -561,6 +742,7 @@ def db_restore_chat(chat_id: str) -> None:
 # Settings and dashboard helpers
 # ---------------------------------------------------------------------------
 
+@_with_dev_fallback
 def db_get_or_create_user_settings(user_id: str) -> dict:
     ensure_runtime_schema()
     conn = get_connection()
@@ -588,6 +770,7 @@ def db_get_or_create_user_settings(user_id: str) -> dict:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_update_user_settings(
     user_id: str,
     default_mode: str,
@@ -635,6 +818,7 @@ def db_update_user_settings(
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_get_dashboard_summary(user_id: str) -> dict:
     ensure_runtime_schema()
     conn = get_connection()
@@ -664,6 +848,7 @@ def db_get_dashboard_summary(user_id: str) -> dict:
 # Notifications
 # ---------------------------------------------------------------------------
 
+@_with_dev_fallback
 def db_create_notification(user_id: str, title: str, body: str, category: str = "info", action_url: str = "") -> str:
     ensure_runtime_schema()
     conn = get_connection()
@@ -686,6 +871,7 @@ def db_create_notification(user_id: str, title: str, body: str, category: str = 
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_get_user_notifications(user_id: str, limit: int = 50) -> list[dict]:
     ensure_runtime_schema()
     conn = get_connection()
@@ -708,6 +894,7 @@ def db_get_user_notifications(user_id: str, limit: int = 50) -> list[dict]:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_mark_notification_read(user_id: str, notification_id: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -725,6 +912,7 @@ def db_mark_notification_read(user_id: str, notification_id: str) -> None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_mark_all_notifications_read(user_id: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -739,6 +927,7 @@ def db_mark_all_notifications_read(user_id: str) -> None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_delete_notification(user_id: str, notification_id: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -757,6 +946,7 @@ def db_delete_notification(user_id: str, notification_id: str) -> None:
 # Files vault
 # ---------------------------------------------------------------------------
 
+@_with_dev_fallback
 def db_save_user_file(
     user_id: str,
     filename: str,
@@ -786,6 +976,7 @@ def db_save_user_file(
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_get_user_files(user_id: str, limit: int = 100) -> list[dict]:
     ensure_runtime_schema()
     conn = get_connection()
@@ -808,6 +999,7 @@ def db_get_user_files(user_id: str, limit: int = 100) -> list[dict]:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_get_user_file(user_id: str, file_id: str) -> dict | None:
     ensure_runtime_schema()
     conn = get_connection()
@@ -829,6 +1021,7 @@ def db_get_user_file(user_id: str, file_id: str) -> dict | None:
         close_connection(conn)
 
 
+@_with_dev_fallback
 def db_delete_user_file(user_id: str, file_id: str) -> None:
     ensure_runtime_schema()
     conn = get_connection()

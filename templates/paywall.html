@@ -3,107 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX — Upgrade to Premium</title>
+    <title>ZENITH OX — Upgrade to Premium</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="dashboard-page paywall-page">
+<body class="ox-payment">
 
-    <div class="paywall-shell">
+    <div class="ox-pay-shell">
 
-        <header class="paywall-header">
-            <a href="{{ url_for('main.menu') }}" class="paywall-back">← Back to Dashboard</a>
-            <a href="/" class="lp27-brand">
-                <span class="brand-mark__orb"></span>
-                <strong>Zenith OX</strong>
+        <!-- Top bar -->
+        <div class="ox-pay-topbar">
+            <a href="{{ url_for('main.menu') }}" class="ox-back-link">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Back
             </a>
-        </header>
 
-        <div class="paywall-body">
+            <span class="ox-notif-logo">
+                <img src="{{ url_for('static', filename='images/logo-orb.png') }}"
+                     alt="Zenith OX"
+                     style="width:36px;height:36px;object-fit:contain;"
+                     onerror="this.style.display='none'">
+            </span>
 
-            <div class="paywall-hero-text">
-                <span class="eyebrow-pill">Zenith OX Premium</span>
-                <h1>You've reached your daily limit</h1>
-                <p>Free accounts get <strong>1,000 tokens per day</strong>. Upgrade to Pro or Premium for unlimited access, faster models, and exclusive features.</p>
-                <div class="paywall-dev-notice">
-                    <span>🔧</span>
-                    <p>Zenith OX Premium is currently under development. Payment will be fully active in <strong>v2.8 — The Premium Update</strong>. Subscribe below to be notified at launch.</p>
+            <div class="ox-secure-badge">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                Secure checkout
+            </div>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages=get_flashed_messages(with_categories=true) %}
+        {% for category, msg in messages %}
+        <div class="ox-alert ox-alert--{{ category }}" style="margin-bottom:16px;">{{ msg }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        <!-- Two-column body -->
+        <div class="ox-pay-body">
+
+            <!-- Left: Plan selection + features -->
+            <div>
+                <div class="ox-pay-eyebrow">PREMIUM PLAN</div>
+                <div class="ox-pay-heading">Unlock the full workspace</div>
+                <div class="ox-pay-sub">Choose how you'd like to be billed. You can switch or cancel any time.</div>
+
+                <!-- Plan cards -->
+                <div class="ox-plan-cards" id="planCards">
+
+                    <div class="ox-plan-card" id="planMonthly" onclick="selectPlan('monthly')">
+                        <div class="ox-plan-card__radio"></div>
+                        <div class="ox-plan-name">Monthly</div>
+                        <div class="ox-plan-price">$24<span> /month</span></div>
+                        <div class="ox-plan-note">Billed monthly. Cancel anytime.</div>
+                    </div>
+
+                    <div class="ox-plan-card is-selected" id="planYearly" onclick="selectPlan('yearly')">
+                        <div class="ox-plan-card__badge">BEST VALUE</div>
+                        <div class="ox-plan-card__radio"></div>
+                        <div class="ox-plan-name">Yearly</div>
+                        <div class="ox-plan-price">$199<span> /year</span></div>
+                        <div class="ox-plan-note">Save 30% — equivalent to $16.6/mo.</div>
+                    </div>
+
+                </div>
+
+                <!-- Feature list -->
+                <ul class="ox-feature-list">
+                    <li>Unlimited chats across every Zenith agent</li>
+                    <li>Priority access to GPT-4o, Claude &amp; Gemini</li>
+                    <li>Code interpreter, file &amp; data analysis</li>
+                    <li>Web search with cited sources</li>
+                    <li>Projects, Library and team sharing</li>
+                </ul>
+
+                <!-- Token info -->
+                <div style="margin-top:24px;padding:16px;background:var(--ox-surface);border:1px solid var(--ox-border2);border-radius:var(--ox-radius);">
+                    <p style="font-size:13px;color:var(--ox-muted);">Your token usage today:
+                        <strong style="color:var(--ox-text);">{{ token_used | default(0) }} / 1,000</strong>
+                    </p>
+                    <div style="height:4px;background:var(--ox-surface2);border-radius:4px;margin:10px 0 6px;">
+                        <div style="height:100%;background:var(--gold-grad);border-radius:4px;width:{{ [(token_used | default(0)) / 10, 100] | min }}%;"></div>
+                    </div>
+                    <p style="font-size:11px;color:var(--ox-muted);">Tokens reset every day at midnight UTC.</p>
                 </div>
             </div>
 
-            <div class="paywall-grid">
-
-                <article class="paywall-card">
-                    <div class="paywall-card__tier">Basic</div>
-                    <div class="paywall-card__price">$0<span>/mo</span></div>
-                    <ul class="paywall-card__features">
-                        <li>✓ 1,000 tokens / day</li>
-                        <li>✓ Meta Llama &amp; GPT-4o</li>
-                        <li>✓ Standard workspace</li>
-                        <li>✓ Up to 3 projects</li>
-                        <li class="paywall-feat--locked">✗ Gemini 1.5 Flash &amp; Pro</li>
-                        <li class="paywall-feat--locked">✗ High thinking modes</li>
-                        <li class="paywall-feat--locked">✗ Priority support</li>
-                    </ul>
-                    <button class="btn-secondary paywall-card__btn" disabled>Current Plan</button>
-                </article>
-
-                <article class="paywall-card paywall-card--featured">
-                    <div class="paywall-card__badge">Most Popular</div>
-                    <div class="paywall-card__tier">Pro</div>
-                    <div class="paywall-card__price">$25<span>/mo</span></div>
-                    <ul class="paywall-card__features">
-                        <li>✓ Unlimited tokens</li>
-                        <li>✓ All models including Gemini</li>
-                        <li>✓ High &amp; High High thinking</li>
-                        <li>✓ Advanced workspace</li>
-                        <li>✓ Unlimited projects</li>
-                        <li>✓ Priority support</li>
-                        <li>✓ Early v2.8 access</li>
-                    </ul>
-                    <button class="btn-primary paywall-card__btn" onclick="showPaymentPending()">Upgrade to Pro</button>
-                </article>
-
-                <article class="paywall-card paywall-card--premium">
-                    <div class="paywall-card__tier">Premium</div>
-                    <div class="paywall-card__price">$50<span>/mo</span></div>
-                    <ul class="paywall-card__features">
-                        <li>✓ Everything in Pro</li>
-                        <li>✓ Custom AI agent config</li>
-                        <li>✓ API access</li>
-                        <li>✓ White-label workspace</li>
-                        <li>✓ Dedicated support</li>
-                        <li>✓ Android app (v2.7+)</li>
-                        <li>✓ First access v2.8</li>
-                    </ul>
-                    <button class="btn-primary paywall-card__btn" onclick="showPaymentPending()">Upgrade to Premium</button>
-                </article>
-
-            </div>
-
-            <div class="paywall-token-info">
-                <p>Your token usage today: <strong>{{ token_used | default(0) }} / 1,000</strong></p>
-                <div class="paywall-token-bar">
-                    <div class="paywall-token-bar__fill" style="width: {{ [(token_used | default(0)) / 10, 100] | min }}%"></div>
+            <!-- Right: Payment form card -->
+            <div class="ox-pay-form-card">
+                <div>
+                    <div class="ox-pay-form-title">Payment details</div>
+                    <div class="ox-pay-form-sub">All transactions are encrypted.</div>
                 </div>
-                <p class="paywall-token-reset">Tokens reset every day at midnight UTC.</p>
-            </div>
 
+                <!-- Cardholder name -->
+                <div>
+                    <div class="ox-pay-field-label">Cardholder name</div>
+                    <div class="ox-field" style="margin-bottom:0;">
+                        <input type="text" placeholder="Alex Morgan" autocomplete="cc-name">
+                    </div>
+                </div>
+
+                <!-- Card number -->
+                <div>
+                    <div class="ox-pay-field-label">Card number</div>
+                    <div class="ox-field" style="margin-bottom:0;">
+                        <span class="ox-field-icon">
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                        </span>
+                        <input type="text" placeholder="1234 5678 9012 3456" autocomplete="cc-number" maxlength="19">
+                    </div>
+                </div>
+
+                <!-- Expiry + CVC -->
+                <div class="ox-pay-field-row">
+                    <div>
+                        <div class="ox-pay-field-label">Expiry</div>
+                        <div class="ox-field" style="margin-bottom:0;">
+                            <span class="ox-field-icon">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </span>
+                            <input type="text" placeholder="MM / YY" autocomplete="cc-exp" maxlength="7">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ox-pay-field-label">CVC</div>
+                        <div class="ox-field" style="margin-bottom:0;">
+                            <span class="ox-field-icon">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </span>
+                            <input type="text" placeholder="123" autocomplete="cc-csc" maxlength="4">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order summary -->
+                <div class="ox-pay-summary">
+                    <div class="ox-pay-summary-row">
+                        <span id="summaryLabel">Premium · Yearly</span>
+                        <span id="summaryPrice">$199.00</span>
+                    </div>
+                    <div class="ox-pay-summary-row">
+                        <span>Tax</span>
+                        <span>—</span>
+                    </div>
+                    <div class="ox-pay-summary-row is-total">
+                        <span>Total due today</span>
+                        <span id="summaryTotal">$199.00</span>
+                    </div>
+                </div>
+
+                <!-- Pay button -->
+                <button class="ox-pay-cta" id="payBtn" onclick="handlePayClick()">Pay $199.00</button>
+
+                <div class="ox-pay-disclaimer">
+                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    Encrypted, PCI-compliant. You won't be charged until you confirm.
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-    function showPaymentPending() {
-        var tc = document.getElementById('toastContainer');
-        var t = document.createElement('div');
+    const plans = {
+        monthly: { label: 'Premium · Monthly', price: '$24.00', btn: 'Pay $24.00' },
+        yearly:  { label: 'Premium · Yearly',  price: '$199.00', btn: 'Pay $199.00' }
+    };
+
+    function selectPlan(plan) {
+        document.getElementById('planMonthly').classList.toggle('is-selected', plan === 'monthly');
+        document.getElementById('planYearly').classList.toggle('is-selected', plan === 'yearly');
+        const p = plans[plan];
+        document.getElementById('summaryLabel').textContent = p.label;
+        document.getElementById('summaryPrice').textContent = p.price;
+        document.getElementById('summaryTotal').textContent = p.price;
+        document.getElementById('payBtn').textContent = p.btn;
+    }
+
+    function handlePayClick() {
+        const tc = document.getElementById('toastContainer');
+        const t = document.createElement('div');
         t.className = 'toast error';
-        t.textContent = 'Zenith ox is under development to Pay, Please Comeback When You hear of release of V2.8 (The Premium update), Thank You';
+        t.textContent = 'Zenith OX Premium is under development. Payment will be active in v2.8 (The Premium Update). Thank you!';
         tc.appendChild(t);
-        setTimeout(function() { t.classList.add('toast--hide'); setTimeout(function() { t.remove(); }, 400); }, 5000);
+        setTimeout(() => { t.classList.add('toast--hide'); setTimeout(() => t.remove(), 400); }, 5000);
     }
     </script>
 </body>

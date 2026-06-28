@@ -3,222 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith OX v2.7 — Dashboard</title>
+    <title>ZENITH OX — Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="dashboard-page">
+<body class="ox-dashboard">
 
-    <div class="v27-dashboard-shell">
+<div class="ox-dash-shell">
 
-        <!-- ── Left Sidebar: AI Models + Projects ───────────────────── -->
-        <aside class="v27-dash-sidebar">
+    <!-- ── Left sidebar ─────────────────────────────────────── -->
+    <aside class="ox-dash-left">
 
-            <div class="v27-dash-brand">
-                <span class="brand-mark__orb"></span>
-                <div>
-                    <strong>Zenith OX</strong>
-                    <small>v2.7 workspace</small>
-                </div>
+        <div class="ox-dash-left__brand">
+            <img class="ox-dash-left__brand-icon"
+                 src="{{ url_for('static', filename='images/logo-orb.png') }}"
+                 alt="Zenith OX"
+                 onerror="this.style.fontSize='32px';this.outerHTML='<span style=\'font-size:32px;filter:drop-shadow(0 0 8px rgba(201,168,76,0.5))\'>🐂</span>'">
+            <span class="ox-dash-left__brand-name">ZENITH OX</span>
+        </div>
+
+        <nav class="ox-dash-nav">
+            <a href="{{ url_for('main.menu') }}" class="is-active">
+                <span class="ox-dash-nav__icon">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                </span>
+                Home
+            </a>
+            <a href="{{ url_for('main.index') }}">
+                <span class="ox-dash-nav__icon">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                </span>
+                Chats
+            </a>
+            <a href="{{ url_for('main.history_center') }}">
+                <span class="ox-dash-nav__icon">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                    </svg>
+                </span>
+                Projects
+            </a>
+            <a href="{{ url_for('main.agents_page') }}">
+                <span class="ox-dash-nav__icon">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </span>
+                Agents
+            </a>
+            <a href="{{ url_for('main.files_page') }}">
+                <span class="ox-dash-nav__icon">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                </span>
+                Library
+            </a>
+            <a href="{{ url_for('main.settings') }}">
+                <span class="ox-dash-nav__icon">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </span>
+                Settings
+            </a>
+        </nav>
+
+        <!-- Workspace badge at bottom -->
+        <div class="ox-workspace-badge">
+            <div class="ox-workspace-badge__icon">🏢</div>
+            <div>
+                <div class="ox-workspace-badge__label">{{ user.display_name or username }}</div>
+                <div class="ox-workspace-badge__sub">Workspace</div>
+            </div>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#6b6b6b">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+
+    </aside>
+
+    <!-- ── Main dashboard content ────────────────────────────── -->
+    <main class="ox-dash-main">
+
+        <!-- Greeting -->
+        <div class="ox-dash-greeting" style="margin-bottom:28px;">
+            <h1>{{ greeting }}</h1>
+            <p>How can I help you advance today?</p>
+        </div>
+
+        <!-- Search bar -->
+        <div class="ox-dash-search" style="margin-bottom:32px;">
+            <svg class="ox-dash-search__icon" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" placeholder="Ask Zenith anything..." id="dashSearch">
+            <button class="ox-dash-search__action">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mode cards -->
+        <div class="ox-mode-grid" style="margin-bottom:36px;">
+            {% for key, mode in modes.items() %}
+            <a href="{{ url_for('main.select_mode', mode_key=key) }}" class="ox-mode-card">
+                <div class="ox-mode-card__icon">{{ mode.emoji }}</div>
+                <div class="ox-mode-card__name">{{ mode.name }}</div>
+                <div class="ox-mode-card__desc">{{ mode.tagline }}</div>
+                <div class="ox-mode-card__arrow">→</div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Recent section -->
+        <div class="ox-recent-header">
+            <h2>Recent</h2>
+            <a href="{{ url_for('main.history_center') }}">View all</a>
+        </div>
+
+        <div class="ox-recent-table">
+            <div class="ox-recent-table__head">
+                <span>NAME</span>
+                <span>TYPE</span>
+                <span>UPDATED</span>
+                <span></span>
             </div>
 
-            <div class="v27-dash-user">
-                <div class="dashboard-user-card__avatar" style="background: {{ user.avatar_color or '#7c5cff' }};">{{ username[:1]|upper }}</div>
-                <div>
-                    <strong>{{ username }}</strong>
-                    <span>{% if user_is_premium %}Pro / Premium{% else %}Free · 1k tokens/day{% endif %}</span>
-                </div>
-            </div>
-
-            <!-- AI Models Section -->
-            <div class="v27-sidebar-section">
-                <div class="v27-sidebar-section__label">AI Models</div>
-                <div class="v27-model-list">
-                    {% for key, item in available_chat_models.items() %}
-                    <a href="{{ url_for('main.select_mode', mode_key=settings.default_mode) }}?model={{ key }}"
-                       class="v27-model-item {% if item.get('premium_only') and not user_is_premium %}v27-model-item--locked{% endif %}">
-                        <span class="v27-model-item__dot"></span>
-                        <div>
-                            <strong>{{ item.label }}</strong>
-                            {% if item.get('premium_only') and not user_is_premium %}
-                            <small>Premium only 🔒</small>
-                            {% else %}
-                            <small>Available</small>
-                            {% endif %}
-                        </div>
-                    </a>
-                    {% endfor %}
-                </div>
-                {% if not user_is_premium %}
-                <a href="{{ url_for('main.paywall') }}" class="v27-upgrade-pill" style="display:block;margin-top:10px;">✦ Unlock all models</a>
-                {% endif %}
-            </div>
-
-            <!-- Project Groups Section -->
-            <div class="v27-sidebar-section">
-                <div class="v27-sidebar-section__label">
-                    Projects
-                    <button class="v27-proj-new-btn" id="newProjectBtn" title="New project">+</button>
-                </div>
-                <div class="v27-project-list" id="projectList">
-                    {% if projects %}
-                        {% for project in projects %}
-                        <div class="v27-project-item" data-project-id="{{ project.id }}">
-                            <div class="v27-project-item__header">
-                                <span class="v27-project-item__name">{{ project.name }}</span>
-                                <span class="v27-project-item__count">{{ project.chats | length }}/3 chats</span>
-                            </div>
-                            <div class="v27-project-chats">
-                                {% for chat in project.chats %}
-                                <a href="{{ url_for('main.open_chat', chat_id=chat.id) }}" class="v27-project-chat">
-                                    <span>{{ chat.title }}</span>
-                                    <small>{{ chat.created_at.strftime('%b %d, %I:%M %p') if chat.created_at else '' }}</small>
-                                </a>
-                                {% endfor %}
-                                {% if project.chats | length < 3 %}
-                                <button class="v27-project-add-chat" data-project-id="{{ project.id }}">+ Add chat</button>
-                                {% else %}
-                                <span class="v27-project-full">Group full (3/3)</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                    <div class="v27-project-empty">
-                        <p>No projects yet.</p>
-                        <p>Create a project to group up to 3 related chats.</p>
+            {% if recent_chats %}
+                {% for chat in recent_chats %}
+                <a href="{{ url_for('main.open_chat', chat_id=chat.id) }}" class="ox-recent-row">
+                    <div class="ox-recent-row__name">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#6b6b6b;flex-shrink:0">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        {{ chat.title or 'Untitled chat' }}
                     </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- App Info -->
-            <div class="v27-sidebar-section v27-sidebar-app-info">
-                <div class="v27-sidebar-section__label">About</div>
-                <ul class="v27-app-info-list">
-                    <li>Version: <strong>2.7</strong></li>
-                    <li>Backend: <strong>Python Flask</strong></li>
-                    <li>Models: <strong>OpenRouter</strong></li>
-                    <li>Search: <strong>Exo AI + Tavily</strong></li>
-                    <li>Auth: <strong>Google OAuth</strong></li>
-                    <li>DB: <strong>Supabase</strong></li>
-                </ul>
-            </div>
-
-            <nav class="v27-dash-nav">
-                <a href="{{ url_for('main.menu') }}" class="is-active">Dashboard</a>
-                <a href="{{ url_for('main.profile') }}">Profile</a>
-                <a href="{{ url_for('main.settings') }}">Settings</a>
-                <a href="{{ url_for('main.files_page') }}">Files</a>
-                <a href="{{ url_for('main.history_center') }}">History</a>
-                <a href="{{ url_for('main.notifications_page') }}">Notifications{% if unread_notifications %} <span class="icon-counter">{{ unread_notifications }}</span>{% endif %}</a>
-                <a href="{{ url_for('auth.logout') }}" class="v27-dash-nav__logout">Logout</a>
-            </nav>
-
-        </aside>
-
-        <!-- ── Main Dashboard Content ────────────────────────────────── -->
-        <main class="v27-dash-main">
-
-            <section class="dashboard-hero">
-                <div>
-                    <span class="eyebrow-pill">Dashboard · v2.7</span>
-                    <h1>{{ greeting }} 👋</h1>
-                    <p>Your tokens, projects, and workspace all in one place.</p>
-                    <div class="dashboard-hero__actions">
-                        <a href="{{ url_for('main.select_mode', mode_key=settings.default_mode) }}" class="btn-primary">Open workspace</a>
-                        <a href="{{ url_for('main.files_page') }}" class="btn-secondary">Files</a>
-                        {% if not user_is_premium %}
-                        <a href="{{ url_for('main.paywall') }}" class="btn-secondary">✦ Upgrade</a>
-                        {% endif %}
+                    <div class="ox-recent-row__type">
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#6b6b6b">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        Conversation
                     </div>
+                    <div class="ox-recent-row__updated">{{ chat.updated_at.strftime('%b %d') if chat.updated_at else '—' }}</div>
+                    <button class="ox-recent-row__more" onclick="event.preventDefault()">⋯</button>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div style="padding:32px;text-align:center;color:#6b6b6b;font-size:14px;">
+                    No recent chats yet. <a href="{{ url_for('main.index') }}" style="color:#c9a84c;">Start one →</a>
                 </div>
-                <div class="dashboard-hero__art">
-                    <div class="dashboard-planet"></div>
-                    <div class="dashboard-hero__badge">v2.7 active</div>
+            {% endif %}
+        </div>
+
+        <!-- Notifications flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div id="dashToasts" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;">
+            {% for category, msg in messages %}
+            <div class="ox-alert ox-alert--{{ category }}" style="max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        <script>setTimeout(()=>{const el=document.getElementById('dashToasts');if(el)el.remove();},5000);</script>
+        {% endif %}
+        {% endwith %}
+
+    </main>
+
+    <!-- ── Right sidebar: Agents ─────────────────────────────── -->
+    <aside class="ox-agents-sidebar">
+
+        <div class="ox-agents-header">
+            <h2>Agents</h2>
+            <a href="{{ url_for('main.index') }}" class="ox-new-agent-btn">
+                + New Agent
+            </a>
+        </div>
+
+        <div class="ox-agent-list">
+
+            {% set agents = [
+                ('Nova',      'General AI Assistant',      '🧠'),
+                ('Scholar',   'Research Specialist',       '📚'),
+                ('Scribe',    'Writing Assistant',         '✏️'),
+                ('Coder',     'Engineering Assistant',     '</>'),
+                ('Analyst',   'Data & Analytics Expert',   '📊'),
+                ('Guard',     'Security Advisor',          '🛡️'),
+                ('Navigator', 'Web & Search Expert',       '🌐'),
+            ] %}
+
+            {% for name, desc, icon in agents %}
+            <a href="{{ url_for('main.index') }}" class="ox-agent-item">
+                <div class="ox-agent-icon">{{ icon }}</div>
+                <div class="ox-agent-info">
+                    <div class="ox-agent-name">{{ name }}</div>
+                    <div class="ox-agent-desc">{{ desc }}</div>
                 </div>
-            </section>
+                <span class="ox-agent-arrow">›</span>
+            </a>
+            {% endfor %}
 
-            <!-- Token usage card -->
-            <section class="v27-token-card">
-                <div class="v27-token-card__info">
-                    <span class="rail-card__eyebrow">Daily Token Usage</span>
-                    <strong>{{ token_used | default(0) }} / 1,000 tokens</strong>
-                    <p>{% if user_is_premium %}Unlimited on your plan.{% else %}Free plan limit. <a href="{{ url_for('main.paywall') }}">Upgrade for unlimited →</a>{% endif %}</p>
-                </div>
-                <div class="paywall-token-bar v27-token-bar">
-                    <div class="paywall-token-bar__fill" style="width: {{ [(token_used | default(0)) / 10, 100] | min }}%"></div>
-                </div>
-                <p class="paywall-token-reset">Resets at midnight UTC.</p>
-            </section>
+        </div>
 
-            <section class="dashboard-stats">
-                <article>
-                    <span>Total chats</span>
-                    <strong>{{ dashboard_summary.chat_count or 0 }}</strong>
-                    <small>{{ dashboard_summary.chats_this_week or 0 }} this week</small>
-                </article>
-                <article>
-                    <span>Memory entries</span>
-                    <strong>{{ dashboard_summary.memory_count or 0 }}</strong>
-                    <small>Available for retrieval</small>
-                </article>
-                <article>
-                    <span>Vault files</span>
-                    <strong>{{ dashboard_summary.file_count or 0 }}</strong>
-                    <small>{{ unread_notifications or 0 }} unread notifications</small>
-                </article>
-            </section>
+        <a href="{{ url_for('main.agents_page') }}" class="ox-view-all-agents">
+            ⊞ View all agents
+        </a>
 
-            <section class="mode-gallery" id="modes">
-                <div class="section-heading section-heading--left compact">
-                    <span class="eyebrow-pill">Choose a mode</span>
-                    <h2>Specialist workspaces</h2>
-                </div>
-                <div class="modes-grid modes-grid--rich">
-                    {% for key, mode in modes.items() %}
-                    <a href="{{ url_for('main.select_mode', mode_key=key) }}" class="mode-card mode-card--rich theme-{{ key }}">
-                        <span class="mode-card__index">0{{ loop.index }}</span>
-                        <span class="mode-emoji">{{ mode.emoji }}</span>
-                        <h3>{{ mode.name }}</h3>
-                        <p>{{ mode.tagline }}</p>
-                        <span class="mode-card__cta">Open workspace →</span>
-                    </a>
-                    {% endfor %}
-                </div>
-            </section>
-        </main>
+    </aside>
 
-    </div>
+</div>
 
-    <nav class="mobile-dock">
-        <a href="{{ url_for('main.menu') }}" class="is-active">Home</a>
-        <a href="{{ url_for('main.files_page') }}">Files</a>
-        <a href="{{ url_for('main.notifications_page') }}">Alerts</a>
-        <a href="{{ url_for('auth.logout') }}">Exit</a>
-    </nav>
-
-    <div class="toast-container" id="toastContainer"></div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <script>
-    (function() {
-        var flashed = {{ messages | tojson }};
-        function showToast(msg, type) {
-            var tc = document.getElementById('toastContainer');
-            var t = document.createElement('div');
-            t.className = 'toast ' + (type || 'info');
-            t.textContent = msg;
-            tc.appendChild(t);
-            setTimeout(function() { t.classList.add('toast--hide'); setTimeout(function() { t.remove(); }, 400); }, 5000);
-        }
-        flashed.forEach(function(m) { showToast(m[1], m[0]); });
-    })();
-    </script>
-    {% endif %}
-    {% endwith %}
+<script>
+    // Redirect search to chat with pre-filled query
+    const dashSearch = document.getElementById('dashSearch');
+    if (dashSearch) {
+        dashSearch.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && dashSearch.value.trim()) {
+                sessionStorage.setItem('zenith_prefill', dashSearch.value.trim());
+                window.location.href = '{{ url_for("main.index") }}';
+            }
+        });
+    }
+</script>
 </body>
 </html>
